@@ -4,7 +4,7 @@ from pygame.locals import *
 import pymunk
 import pymunk.pygame_util
 from pymunk import Vec2d
-
+import threading
 
 class BallProducer:
     def __init__(self, centerx, centery, vel_x, vel_y, rate, color, env):
@@ -40,9 +40,10 @@ class BallProducer:
                                  vel_y=self.vel_y)
             self.env.add_ball(ball)
 
-class DataCenterEnv:
-    def __init__(self, width, height):
 
+class DataCenterEnv(threading.Thread):
+    def __init__(self, width, height):
+        threading.Thread.__init__(self)
         self.width = width
         self.height = height
 
@@ -71,7 +72,7 @@ class DataCenterEnv:
         return heater
 
     def add_fan(self, x, y, rate=5):
-        fan = BallProducer(x, y, 30, 0, rate=rate, color='green', env=self)
+        fan = BallProducer(x, y, 100, 30, rate=rate, color='green', env=self)
         self.fans.append(fan)
         return fan
 
@@ -135,9 +136,10 @@ dc = DataCenterEnv(800, 500)
 dc.add_wall(100, 150, 600)
 dc.add_wall(100, 350, 600)
 
-dc.add_fan(150, 175, rate=3)
-dc.add_fan(150, 325, rate=3)
+dc.add_fan(150, 200, rate=3)
+dc.add_fan(150, 300, rate=3)
 
 dc.add_heater(450, 250, rate=5)
 
-dc.run()
+dc.start()
+print ("I am here")
