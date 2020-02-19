@@ -6,7 +6,32 @@ import pymunk.pygame_util
 from pymunk import Vec2d
 import threading
 from gym.spaces import MultiDiscrete
+import json
+import subprocess
 
+class Metrics:
+    def __init__(self):
+        self.data = {}
+
+    def add(self, name, value):
+        self.data[name] = self.data.get(name, [])
+        self.data[name].append(value)
+
+    def update(self, d):
+        for k in d:
+            self.add(k, d[k])
+
+    def latest(self):
+        l = {}
+        for name in self.data:
+            l[name] = self.data[name][-1]
+        return l
+
+    def __str__(self):
+        return json.dumps(self.data)
+
+    def __repr__(self):
+        return str(self.data)
 
 class BallProducer:
     def __init__(self, centerx, centery, vel_x, vel_y, rate, color, env, name):
@@ -61,8 +86,9 @@ class DataCenterEnv(threading.Thread):
 
         self.space = pymunk.Space()
         self.space.gravity = (0.0, 0.0)
-        self.counter = {}
+        self.speed_counter = {}
         self.energy_counter = {}
+        self.metrics = Metrics()
 
         pygame.init()
         screen = pygame.display.set_mode((self.width, self.height))
@@ -104,9 +130,10 @@ class DataCenterEnv(threading.Thread):
             self.space.remove(ball, ball.body)
             self.balls.remove(ball)
 
-        self.counter = {}
+        self.speed_counter = {}
         for ball in self.balls:
-            self.counter[ball.name] = self.counter.get(ball.name, 0) + 1
+            key = ball.name + "_presence"
+            self.speed_counter[key] = self.speed_counter.get(key, 0) + 1
 
     def run(self):
         # run the data center
@@ -136,9 +163,9 @@ class DataCenterEnv(threading.Thread):
             self.cleanup()
             self.space.debug_draw(draw_options)
             self.space.step(1 / 60.0)
-
             pygame.display.flip()
             clock.tick(60)
+
 
     def action_space(self):
         actions = MultiDiscrete([10 for i in self.fans])
@@ -148,5 +175,16 @@ class DataCenterEnv(threading.Thread):
         for fan, rate in zip(self.fans, action):
             fan.rate = rate
 
+    def update_metrics(self):
+        self.metrics.update(self.energy_counter)
+        self.metrics.update(self.speed_counter)
+
+        for i, fan in enumerate(self.fans):
+            self.metrics.add("fan_speed_" + str(i), fan.rate)
+
+        for i, heater in enumerate(self.heaters):
+            self.metrics.add("heater_speed_" + str(i), heater.rate)
+
     def state(self):
-        return [self.counter, self.energy_counter, [fan.rate for fan in self.fans], [heater.rate for heater in self.heaters]]
+        self.update_metrics()
+        return self.metrics.latest()

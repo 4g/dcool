@@ -33,6 +33,8 @@ class DataCenterLife(threading.Thread):
         :return: nothing
         """
         self.dc.add_heater(450, 250, rate=0)
+        self.dc.add_heater(250, 200, rate=0)
+
         time.sleep(5)
         self.dc.heaters[0].rate = 1
         time.sleep(5)
@@ -40,7 +42,7 @@ class DataCenterLife(threading.Thread):
         time.sleep(20)
         self.dc.heaters[0].rate = 3
         time.sleep(20)
-        self.dc.add_heater(250, 200, rate=5)
+        self.dc.heaters[1].rate = 5
         time.sleep(30)
         self.dc.heaters[0].rate = 1
         self.dc.heaters[1].rate = 1
