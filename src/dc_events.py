@@ -32,8 +32,6 @@ class DataCenterLife(threading.Thread):
         5. both increase to rate 5, stays for 30s
         :return: nothing
         """
-        self.dc.add_heater(450, 250, rate=0)
-        self.dc.add_heater(250, 200, rate=0)
 
         time.sleep(5)
         self.dc.heaters[0].rate = 1

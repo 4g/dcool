@@ -74,10 +74,11 @@ class BallProducer:
 
 
 class DataCenterEnv(threading.Thread):
-    def __init__(self, width, height):
+    def __init__(self, width, height, render=True):
         threading.Thread.__init__(self)
         self.width = width
         self.height = height
+        self.render = render
 
         self.walls = []
         self.heaters = []
@@ -90,9 +91,10 @@ class DataCenterEnv(threading.Thread):
         self.energy_counter = {}
         self.metrics = Metrics()
 
-        pygame.init()
-        screen = pygame.display.set_mode((self.width, self.height))
-        self.screen = screen
+        if self.render:
+            pygame.init()
+            screen = pygame.display.set_mode((self.width, self.height))
+            self.screen = screen
 
     def add_ball(self, ball):
         self.space.add(ball)
@@ -103,10 +105,13 @@ class DataCenterEnv(threading.Thread):
         etype = ball.name + "_energy"
         self.energy_counter[etype] = self.energy_counter.get(etype, 0) + 1
 
-    def add_wall(self, x, y, l, thickness=5.0):
+    def add_wall(self, x, y, l, thickness=5.0, vertical=False):
         body = self.space.static_body
         body.position = (x, y)
-        l1 = pymunk.Segment(body, (0, 0), (l, 0.0), thickness)
+        if vertical:
+            l1 = pymunk.Segment(body, (0, 0), (0.0, l), thickness)
+        else:
+            l1 = pymunk.Segment(body, (0, 0), (l, 0.0), thickness)
         self.space.add(l1)
         self.walls.append(l1)
 
@@ -138,18 +143,20 @@ class DataCenterEnv(threading.Thread):
     def run(self):
         # run the data center
 
-        pygame.display.set_caption("Control the heat")
         clock = pygame.time.Clock()
+        if self.render:
+            pygame.display.set_caption("Control the heat")
+            draw_options = pymunk.pygame_util.DrawOptions(self.screen)
 
-        draw_options = pymunk.pygame_util.DrawOptions(self.screen)
         iter = 0
         while True:
             iter += 1
-            for event in pygame.event.get():
-                if event.type == QUIT:
-                    sys.exit(0)
-                elif event.type == KEYDOWN and event.key == K_ESCAPE:
-                    sys.exit(0)
+            if self.render:
+                for event in pygame.event.get():
+                    if event.type == QUIT:
+                        sys.exit(0)
+                    elif event.type == KEYDOWN and event.key == K_ESCAPE:
+                        sys.exit(0)
 
             if iter % 5 == 0:
                 for heater in self.heaters:
@@ -158,12 +165,24 @@ class DataCenterEnv(threading.Thread):
                 for fan in self.fans:
                     fan.step()
 
-            self.screen.fill((255, 255, 255))
+            if self.render:
+                self.screen.fill((255, 255, 255))
+                for fan in self.fans:
+                    pygame.draw.rect(self.screen, pygame.color.THECOLORS['blue'],
+                                     pygame.Rect(fan.centerx - 15, self.height - fan.centery - 15, 30, 30))
+                for heater in self.heaters:
+                    pygame.draw.rect(self.screen, pygame.color.THECOLORS['black'],
+                                     pygame.Rect(heater.centerx - 15, self.height - heater.centery - 15, 30, 30))
+
+
 
             self.cleanup()
-            self.space.debug_draw(draw_options)
+            if self.render:
+                self.space.debug_draw(draw_options)
+
             self.space.step(1 / 60.0)
-            pygame.display.flip()
+            if self.render:
+                pygame.display.flip()
             clock.tick(60)
 
 

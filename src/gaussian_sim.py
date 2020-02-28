@@ -41,8 +41,8 @@ class GaussianDCEnv:
         self.space_shape = (500, 500)
         self.heaters = []
         self.fans = []
-        self.heater_channel = 1
-        self.fan_channel = 2
+        self.heater_channel = 2
+        self.fan_channel = 1
         self.current_field = None
 
     def add_heater(self, x, y, rate):
@@ -75,7 +75,6 @@ class GaussianDCEnv:
         fan_field = np.average(fan_fields, axis=0)
         fields[:, :, self.fan_channel] = fan_field
 
-        fields[:, :, self.heater_channel] =
 
         if self.current_field is None:
             self.current_field = fields
@@ -94,14 +93,14 @@ class GaussianDCEnv:
 
 gsdc = GaussianDCEnv()
 for i in range(4):
-    gsdc.add_heater(i*0.2, 0, 1)
-
-
-for i in tqdm(range(100)):
-    gsdc.update_field()
+    gsdc.add_heater(i*0.2, 0, 4)
 
 for i in range(4):
-    gsdc.add_fan(i*0.2, 0.2, 1)
+    gsdc.add_fan(i*0.2, 0.2, 8)
 
-for i in tqdm(range(100)):
+for i in tqdm(range(1000)):
+    gsdc.update_field()
+
+
+for i in tqdm(range(1000)):
     gsdc.update_field()
