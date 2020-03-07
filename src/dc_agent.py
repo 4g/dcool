@@ -81,7 +81,7 @@ time_elapsed = 0
 start_time = time.time()
 
 for i in range(150):
-    sample_action = dc.action_space().sample()
+    sample_action = dc.action_space.sample()
     print(time_elapsed, "::", dc.state())
     heat_energy = dc.metrics.latest().get("heater_presence", 0)
     fan_speed = int(10*(heat_energy/2000.0))

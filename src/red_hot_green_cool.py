@@ -9,7 +9,7 @@ def add_ball(space, centerx, centery, vectorx, vectory, color):
     """Add a ball to the given space at a random position"""
     mass = 1
     radius = 3
-    inertia = pymunk.moment_for_circle(mass, 0, radius, (0,0))
+    inertia = pymunk.moment_for_circle(mass, 0, radius, (0, 0))
     body = pymunk.Body(mass, inertia)
     x = centerx + random.randint(-radius, radius)
     body.position = x, centery + random.randint(-radius, radius)

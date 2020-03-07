@@ -8,6 +8,10 @@ import threading
 from gym.spaces import MultiDiscrete
 import json
 import subprocess
+import gym
+from gym import spaces
+import numpy as np
+
 
 class Metrics:
     def __init__(self):
@@ -73,8 +77,9 @@ class BallProducer:
             self.env.add_ball(ball)
 
 
-class DataCenterEnv(threading.Thread):
+class DataCenterEnv(threading.Thread, gym.Env):
     def __init__(self, width, height, render=True):
+        super(DataCenterEnv, self).__init__()
         threading.Thread.__init__(self)
         self.width = width
         self.height = height
@@ -90,6 +95,9 @@ class DataCenterEnv(threading.Thread):
         self.speed_counter = {}
         self.energy_counter = {}
         self.metrics = Metrics()
+        self.action_space = MultiDiscrete([10 for i in self.fans])
+        self.observation_space = spaces.Box(low=0, high=255,
+                                        shape=(width, height, 3), dtype=np.uint8)
 
         if self.render:
             pygame.init()
@@ -185,14 +193,15 @@ class DataCenterEnv(threading.Thread):
                 pygame.display.flip()
             clock.tick(60)
 
-
-    def action_space(self):
-        actions = MultiDiscrete([10 for i in self.fans])
-        return actions
-
     def step(self, action):
         for fan, rate in zip(self.fans, action):
             fan.rate = rate
+
+        return pygame.surfarray.pixels2d(self.screen), self.metrics, False, None
+
+
+    def reset(self):
+        return None
 
     def update_metrics(self):
         self.metrics.update(self.energy_counter)
