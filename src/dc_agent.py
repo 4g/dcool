@@ -8,11 +8,20 @@ import re
 
 
 def get_dc():
-    dc = DataCenterEnv(800, 500)
+    dc = DataCenterEnv(800, 600)
 
-    dc.add_wall(100, 150, 600)
-    dc.add_wall(100, 350, 600)
-    dc.add_wall(100, 150, 200, vertical=True)
+
+    dc.add_wall(20, 50, 700, thickness=2)
+    dc.add_wall(20, 550, 700,  thickness=2)
+    dc.add_wall(20, 50, 500, vertical=True,  thickness=2)
+    dc.add_wall(720, 50, 500, vertical=True,  thickness=2)
+
+    xs = [100,200,300,400,500,600]
+    ys = [150, 250, 350, 450]
+
+    for x in xs:
+        for y in ys:
+            dc.add_wall(x, y, 50)
 
     dc.add_fan(150, 200, rate=0)
     dc.add_fan(150, 300, rate=0)

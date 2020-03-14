@@ -197,7 +197,7 @@ class DataCenterEnv(threading.Thread, gym.Env):
         for fan, rate in zip(self.fans, action):
             fan.rate = rate
 
-        return pygame.surfarray.pixels2d(self.screen), self.metrics, False, None
+        return pygame.surfarray.pixels3d(self.screen), self.metrics, False, None
 
 
     def reset(self):

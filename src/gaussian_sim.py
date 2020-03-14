@@ -93,10 +93,11 @@ class GaussianDCEnv:
 
 gsdc = GaussianDCEnv()
 for i in range(4):
-    gsdc.add_heater(i*0.2, 0, 4)
+    for j in range(4):
+        gsdc.add_heater(i*0.2, j*0.2, 4)
 
-for i in range(4):
-    gsdc.add_fan(i*0.2, 0.2, 8)
+# for i in range(4):
+#     gsdc.add_fan(i*0.2, 0.2, 8)
 
 for i in tqdm(range(1000)):
     gsdc.update_field()

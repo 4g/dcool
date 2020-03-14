@@ -2,6 +2,7 @@ import gym
 from dc_env import DataCenterEnv
 import time
 from dc_events import DataCenterLife
+import cv2
 
 def get_dc():
   dc = DataCenterEnv(800, 500)
@@ -25,10 +26,12 @@ env.start()
 dlife.start()
 
 observation = env.reset()
+
 for _ in range(1000):
   action = env.action_space.sample() # your agent here (this takes random actions)
   print (env.action_space)
   observation, reward, done, info = env.step(action)
   time.sleep(1)
   print (reward, observation.shape)
+
 env.close()
