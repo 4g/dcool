@@ -1,33 +1,32 @@
-import gym
-from gym import spaces
-import numpy as np
+"""
+A Datacenter environment simulator
+Since CFD is slow, we use balls to simulate heat flow
+Color of a component represents how hot it is.
 
-class CustomEnv(gym.Env):
-  """Custom Environment that follows gym interface"""
-  metadata = {'render.modes': ['human']}
+Following components can be added:
+0. Balls : Balls are representation of hot/cold air in this system. They can be added by either rack or tiles.
+           And absorbed by anyone too.
+1. Walls, walls are non-absorbent i.e. they do not absorb any heat
+2. Racks, generates balls, absorbs balls. Generated balls have same color as rack. Loses heat as balls go out.
+3. Tiles, generates balls, absorbs nothing
+4. AHU, Absorbs balls, uses energy to convert balls from hot to cold
 
-  def __init__(self, arg1, arg2):
-    super(CustomEnv, self).__init__()
-    # Define action and observation space
-    # They must be gym.spaces objects
-    # Example when using discrete actions:
-    self.action_space = spaces.Discrete(5)
-    # Example for using image as input:
-    self.observation_space = spaces.Box(low=0, high=255,
-                                        shape=(640, 480, 3), dtype=np.uint8)
+=======================
+^^^^^^^^^^^^^^^^^^^^^^=
+^   ----  ----  ---- ^=
+^     o     o    o   ^=
+^   ----  ----  ---- ^=
+^                    ^=
+^   ----  ----  ---- ^=
+^     o     o    o   ^=
+^   ----  ----  ---- ^=
+^                    ^=
+^^^^^^^^^^^^^^^^^^^^^^=
+=======================
 
-  def step(self, action):
-    observation = self.observation_space.sample()
-    reward = 0
-    done = 1
-    info = {}
-    return observation, reward, done, info
+o: Cold Tile
+^: AHU
+----: Rack
+"=": wall
 
-  def reset(self):
-    return self.observation_space.sample()  # reward, done, info can't be included
-
-  def render(self, mode='human'):
-    print ("banana")
-
-  def close (self):
-    pass
+"""
