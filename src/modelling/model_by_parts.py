@@ -4,7 +4,6 @@ from tqdm import tqdm
 from datetime import datetime
 import pandas as pd
 import keras
-from sklearn.preprocessing import normalize
 import dc_defs as DC
 import numpy as np
 import matplotlib.pyplot as plt
@@ -70,9 +69,12 @@ def create_model(indim, outdim):
     output = keras.layers.Dense(outdim, activation='sigmoid')(x)
 
     model = keras.Model(inputs=input_layer, outputs=output)
-    model.compile(optimizer=keras.optimizers.RMSprop(lr=0.001), loss='mse', metrics=['mse', 'mae'])
+    model.compile(optimizer=keras.optimizers.RMSprop(lr=0.01), loss='mse', metrics=['mse', 'mae'])
     return model
 
+
+def normalize(df):
+    return (df - df.min()) / (df.max() - df.min())
 
 
 def partition_data(infile, tags, input_params, output_params):
@@ -83,30 +85,47 @@ def partition_data(infile, tags, input_params, output_params):
 
     df = preprocess(data)
 
+    # indexNames = df[df[output_params[0]] < 10].index
+    # df.drop(indexNames, inplace=True)
+
     X = df[input_params]
-    X = X.values
+    X = normalize(X)
+
 
     y = df[output_params]
-    y = y.values
+    y = normalize(y)
 
-    # Chop off the points when power is less than 10
-    z = np.where(y > 10)
-
-    X = X[z[0]]
-    y = y[z[0]]
-    #
-    sns.lineplot(data=df[input_params])
-    sns.lineplot(data=df[output_params])
+    sns.lineplot(data=X)
+    sns.lineplot(data=y)
     plt.show()
 
-    X = normalize(X, norm='max', axis=1)
-    y = normalize(y, norm='max', axis=0)
+    X = X.values
+    y = y.values
 
+
+    # # Chop off the points when power is less than 10
+    # z = np.where(y > 10)
+    #
+    # X = X[z[0]]
+    # y = y[z[0]]
+    #
+
+    #
+    # X, _xnorms = normalize(X, norm='max', axis=1, return_norm=True)
+    # y, _ynorms = normalize(y, norm='max', axis=0, return_norm=True)
+
+    # print (_xnorms, _ynorms)
 
     X = np.expand_dims(X, axis=-1)
 
     print(X.shape, y.shape)
     return X, y
+
+def lrschedule(epoch, lr):
+    if epoch % 5 == 0:
+        lr = lr / 10.0
+    return lr
+
 
 def main(infile):
     chiller1_model_tags = {DC.chiller1, DC.a_humidity, DC.a_temperature}
@@ -132,22 +151,30 @@ def main(infile):
     model = create_model(X.shape[1], y.shape[1])
     model.summary()
 
-    reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2,
-                                                  patience=5, min_lr=0.000001, verbose=1)
 
-    for batch_size in [4,8,16,32,64,128]:
-        model.fit(X, y, batch_size=batch_size, epochs=24, verbose=1, callbacks=[reduce_lr], shuffle=True, validation_split=0.2)
-        model.fit(test_X, test_y, batch_size=batch_size, epochs=24, verbose=1, callbacks=[reduce_lr], shuffle=True, validation_split=0.2)
+    reduce_lr = keras.callbacks.LearningRateScheduler(schedule=lrschedule, verbose=True)
 
-    model.save("saved_model.hdf5")
+    # reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+    #                                               patience=5, min_lr=0.000001, verbose=1)
+    #
+    for batch_size in [4,8,16,32,64,128][::-1]:
+        model.fit(X, y, batch_size=batch_size, epochs=10, verbose=1, callbacks=[reduce_lr], shuffle=True, validation_split=0.2)
+        model.fit(test_X, test_y, batch_size=batch_size, epochs=10, verbose=1, callbacks=[reduce_lr], shuffle=True, validation_split=0.2)
+        model.save("saved_model.hdf5", overwrite=True)
 
-    pred_y = model.predict(X).flatten()
-    print (pred_y.shape, test_y.shape)
+    model = keras.models.load_model("saved_model.hdf5")
 
-    plt.scatter(y, pred_y)
-    plt.xlabel('True Values')
-    plt.ylabel('Predictions')
-    plt.show()
+    for _x, _y in [(X, y), (test_X, test_y)]:
+        pred_y = model.predict(_x).flatten()
+        print (pred_y.shape, _y.shape)
+
+        plt.scatter(_y, pred_y)
+        plt.xlabel('True Values')
+        plt.ylabel('Predictions')
+        plt.show()
+
+
+
 
     # model.evaluate(test_X, test_y)
 
