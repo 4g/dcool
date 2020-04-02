@@ -1,5 +1,4 @@
-chiller1 = "CHILLER-1 DATA"
-chiller2 = "CHILLER-2 DATA"
+chiller = "CHILLER-{n} DATA"
 a_humidity = "Ambient Humidity"
 a_temperature = "Ambient Temperature"
 

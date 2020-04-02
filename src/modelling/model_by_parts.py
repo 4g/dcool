@@ -3,7 +3,7 @@ import json
 from tqdm import tqdm
 from datetime import datetime
 import pandas as pd
-import keras
+from tensorflow import keras
 import dc_defs as DC
 import numpy as np
 import matplotlib.pyplot as plt
@@ -69,12 +69,14 @@ def create_model(indim, outdim):
     output = keras.layers.Dense(outdim, activation='sigmoid')(x)
 
     model = keras.Model(inputs=input_layer, outputs=output)
-    model.compile(optimizer=keras.optimizers.RMSprop(lr=0.01), loss='mse', metrics=['mse', 'mae'])
+    model.compile(optimizer=keras.optimizers.Adam(lr=0.01), loss='mse', metrics=['mse', 'mae'])
     return model
 
 
 def normalize(df):
-    return (df - df.min()) / (df.max() - df.min())
+    df_min = df.min()
+    df_max = df.max()
+    return ((df - df_min) / (df_max - df_min)), list(zip(df_min.values, df_max.values))
 
 
 def partition_data(infile, tags, input_params, output_params):
@@ -85,15 +87,15 @@ def partition_data(infile, tags, input_params, output_params):
 
     df = preprocess(data)
 
-    # indexNames = df[df[output_params[0]] < 10].index
-    # df.drop(indexNames, inplace=True)
+    indexNames = df[df[output_params[0]] < 10].index
+    df.drop(indexNames, inplace=True)
 
     X = df[input_params]
-    X = normalize(X)
+    X, X_norm = normalize(X)
 
 
     y = df[output_params]
-    y = normalize(y)
+    y, y_norm = normalize(y)
 
     sns.lineplot(data=X)
     sns.lineplot(data=y)
@@ -119,53 +121,72 @@ def partition_data(infile, tags, input_params, output_params):
     X = np.expand_dims(X, axis=-1)
 
     print(X.shape, y.shape)
-    return X, y
+    return X, y, X_norm, y_norm
 
 def lrschedule(epoch, lr):
-    if epoch % 5 == 0:
-        lr = lr / 10.0
+    if epoch < 2:
+        lr = 0.001
+    elif epoch < 5:
+        lr = 0.0001
+    elif epoch < 10:
+        lr = 0.00001
+    elif epoch < 15:
+        lr = 0.000001
+    else:
+        lr = 0.0000001
     return lr
 
+def shuffle_together(a, b):
+    rng_state = np.random.get_state()
+    np.random.shuffle(a)
+    np.random.set_state(rng_state)
+    np.random.shuffle(b)
+
+def get_data(infile):
+    X = None
+    y = None
+
+    for chiller_index in [1, 2]:
+        chiller_model_tags = {DC.chiller.format(n=chiller_index), DC.a_humidity, DC.a_temperature}
+
+        chiller_input_params = [x.format(n=chiller_index) for x in DC.chiller_input_params]
+        chiller_output_params = [x.format(n=chiller_index) for x in DC.chiller_output_params]
+
+        _X, _y, X_norm, y_norm = partition_data(infile,
+                              chiller_model_tags,
+                              chiller_input_params,
+                              chiller_output_params)
+
+        print (X_norm, y_norm)
+
+        if X is None:
+            X = _X
+            y = _y
+        else:
+            X = np.concatenate((X, _X), axis=0)
+            y = np.concatenate((y, _y), axis=0)
+
+    return X, y
 
 def main(infile):
-    chiller1_model_tags = {DC.chiller1, DC.a_humidity, DC.a_temperature}
-    chiller2_model_tags = {DC.chiller2, DC.a_humidity, DC.a_temperature}
-
-    chiller1_input_params = [x.format(n="1") for x in DC.chiller_input_params]
-    chiller1_output_params = [x.format(n="1") for x in DC.chiller_output_params]
-
-    X, y = partition_data(infile,
-                          chiller1_model_tags,
-                          chiller1_input_params,
-                          chiller1_output_params)
-
-    chiller2_input_params = [x.format(n="2") for x in DC.chiller_input_params]
-    chiller2_output_params = [x.format(n="2") for x in DC.chiller_output_params]
-
-    test_X, test_y = partition_data(infile,
-                          chiller2_model_tags,
-                          chiller2_input_params,
-                          chiller2_output_params)
-
-
-    model = create_model(X.shape[1], y.shape[1])
+    num_input_params = len(DC.chiller_input_params)
+    num_output_params = len(DC.chiller_output_params)
+    model = create_model(num_input_params, num_output_params)
     model.summary()
 
+    mode = "test"
 
-    reduce_lr = keras.callbacks.LearningRateScheduler(schedule=lrschedule, verbose=True)
+    if mode == "train":
+        X, y = get_data(infile)
 
-    # reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2,
-    #                                               patience=5, min_lr=0.000001, verbose=1)
-    #
-    for batch_size in [4,8,16,32,64,128][::-1]:
-        model.fit(X, y, batch_size=batch_size, epochs=10, verbose=1, callbacks=[reduce_lr], shuffle=True, validation_split=0.2)
-        model.fit(test_X, test_y, batch_size=batch_size, epochs=10, verbose=1, callbacks=[reduce_lr], shuffle=True, validation_split=0.2)
-        model.save("saved_model.hdf5", overwrite=True)
+        reduce_lr = keras.callbacks.LearningRateScheduler(schedule=lrschedule, verbose=True)
+        for batch_size in [4, 16, 64, 128]:
+            shuffle_together(X,  y)
+            model.fit(X, y, batch_size=batch_size, epochs=10, verbose=1, callbacks=[reduce_lr], shuffle=True, validation_split=0.2)
+            model.save("saved_model.hdf5", overwrite=True)
 
-    model = keras.models.load_model("saved_model.hdf5")
 
-    for _x, _y in [(X, y), (test_X, test_y)]:
-        pred_y = model.predict(_x).flatten()
+        pred_y = model.predict(X).flatten()
         print (pred_y.shape, _y.shape)
 
         plt.scatter(_y, pred_y)
@@ -173,10 +194,48 @@ def main(infile):
         plt.ylabel('Predictions')
         plt.show()
 
+    if mode == "test":
+        model = keras.models.load_model("saved_model.hdf5")
+        minx, maxx = zip(*[(20.3, 21.4), (25.3, 32.5), (34.1, 82.1), (20.1, 24.5), (14.9, 22.2)])
+        minx = np.asarray(minx)
+        maxx = np.asarray(maxx)
 
+        num_samples = 10
+
+        fval = 0.5
+        for index in range(5):
+            X = []
+            for i in range(num_samples):
+                var = i / num_samples
+                v = [fval, fval, fval, fval, fval]
+                v[index] = var
+                X.append(v)
+
+            X = np.asarray(X)
+            X = np.expand_dims(X, axis=-1)
+            y = model.predict(X)
+            sns.lineplot(data=y)
+            plt.show()
 
 
     # model.evaluate(test_X, test_y)
+
+def test_model_variation(param_name, model_path):
+    """
+    (20.3, 21.4), (25.3, 32.5), (34.1, 82.1), (20.1, 24.5), (14.9, 22.2)]
+     [(24.0, 131.0)
+    """
+
+    """
+    ['CH_{n}_RETURN',
+        'oat1',
+        'oah',
+        'CW_{n}_RETURN',
+        'CH_{n}/Evaporator Saturation Temp']"""
+
+    pass
+
+
 
 
 if __name__ == "__main__":
