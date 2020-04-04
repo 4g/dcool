@@ -6,6 +6,7 @@ import pandas as pd
 from tensorflow import keras
 import dc_defs as DC
 import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -18,7 +19,6 @@ def load_data(infile, tagset=None):
         tags = (set(json.loads(tags)))
         common_tag = tags.intersection(tagset)
         if common_tag:
-            tagmap[param] = common_tag
             data[param] = data.get(param, [])
             data[param].append((timestamp, float(value)))
 
@@ -46,38 +46,28 @@ def preprocess(data):
     df.fillna(method='bfill', inplace=True)
     return df
 
-# def create_model(indim, outdim, timesteps):
-#     input_layer = keras.layers.Input(shape=(timesteps, indim))
-#     x = keras.layers.Conv1D(filters=64, kernel_size=5, strides=1,activation='relu')(input_layer)
-#     x = keras.layers.Flatten()(x)
-#     # x = keras.layers.Dense(64, activation='relu')(x)
-#     output = keras.layers.Dense(outdim, activation='sigmoid', use_bias=True)(x)
-#
-#     model = keras.Model(inputs=input_layer, outputs=output)
-#     model.compile(optimizer=keras.optimizers.RMSprop(lr=0.001), loss='mse', metrics=['mse'])
-#     return model
-
-
 def create_model(indim, outdim):
-    input_layer = keras.layers.Input(shape=(indim,1))
+    input_layer = keras.layers.Input(shape=(indim))
     x = keras.layers.Dense(32, activation='relu')(input_layer)
     x = keras.layers.Dense(32, activation='relu')(x)
     x = keras.layers.Dense(32, activation='relu')(x)
     x = keras.layers.Dense(32, activation='relu')(x)
-
-    x = keras.layers.Flatten()(x)
-    output = keras.layers.Dense(outdim, activation='sigmoid')(x)
+    output = keras.layers.Dense(outdim, activation='relu')(x)
 
     model = keras.Model(inputs=input_layer, outputs=output)
-    model.compile(optimizer=keras.optimizers.Adam(lr=0.01), loss='mse', metrics=['mse', 'mae'])
+    model.compile(optimizer=keras.optimizers.SGD(lr=0.01), loss='mse', metrics=['mse', 'mae'])
     return model
 
+def mean_normalize(df):
+    df_min = df.min()
+    df_max = df.max()
+    df_mean = df.mean()
+    return ((df - df_mean) / (df_max - df_min)), list(zip(df_min.values, df_max.values))
 
-def normalize(df):
+def minmax_normalize(df):
     df_min = df.min()
     df_max = df.max()
     return ((df - df_min) / (df_max - df_min)), list(zip(df_min.values, df_max.values))
-
 
 def partition_data(infile, tags, input_params, output_params):
     data, tagmap = load_data(infile, tags)
@@ -91,46 +81,32 @@ def partition_data(infile, tags, input_params, output_params):
     df.drop(indexNames, inplace=True)
 
     X = df[input_params]
-    X, X_norm = normalize(X)
 
 
     y = df[output_params]
-    y, y_norm = normalize(y)
 
-    sns.lineplot(data=X)
-    sns.lineplot(data=y)
-    plt.show()
+
+    # sns.lineplot(data=X)
+    # sns.lineplot(data=y)
+    # plt.show()
+
+    X, X_norm = mean_normalize(X)
+    y, y_norm = minmax_normalize(y)
 
     X = X.values
     y = y.values
-
-
-    # # Chop off the points when power is less than 10
-    # z = np.where(y > 10)
-    #
-    # X = X[z[0]]
-    # y = y[z[0]]
-    #
-
-    #
-    # X, _xnorms = normalize(X, norm='max', axis=1, return_norm=True)
-    # y, _ynorms = normalize(y, norm='max', axis=0, return_norm=True)
-
-    # print (_xnorms, _ynorms)
-
-    X = np.expand_dims(X, axis=-1)
 
     print(X.shape, y.shape)
     return X, y, X_norm, y_norm
 
 def lrschedule(epoch, lr):
-    if epoch < 2:
+    if epoch < 5:
         lr = 0.001
-    elif epoch < 5:
-        lr = 0.0001
     elif epoch < 10:
-        lr = 0.00001
+        lr = 0.0001
     elif epoch < 15:
+        lr = 0.00001
+    elif epoch < 25:
         lr = 0.000001
     else:
         lr = 0.0000001
@@ -153,9 +129,9 @@ def get_data(infile):
         chiller_output_params = [x.format(n=chiller_index) for x in DC.chiller_output_params]
 
         _X, _y, X_norm, y_norm = partition_data(infile,
-                              chiller_model_tags,
-                              chiller_input_params,
-                              chiller_output_params)
+                                          chiller_model_tags,
+                                          chiller_input_params,
+                                          chiller_output_params)
 
         print (X_norm, y_norm)
 
@@ -168,59 +144,45 @@ def get_data(infile):
 
     return X, y
 
-def main(infile):
+def main(infile, model_file, mode):
     num_input_params = len(DC.chiller_input_params)
     num_output_params = len(DC.chiller_output_params)
     model = create_model(num_input_params, num_output_params)
     model.summary()
 
-    mode = "test"
 
     if mode == "train":
         X, y = get_data(infile)
-
+        model = keras.models.load_model(model_file)
         reduce_lr = keras.callbacks.LearningRateScheduler(schedule=lrschedule, verbose=True)
         for batch_size in [4, 16, 64, 128]:
             shuffle_together(X,  y)
-            model.fit(X, y, batch_size=batch_size, epochs=10, verbose=1, callbacks=[reduce_lr], shuffle=True, validation_split=0.2)
-            model.save("saved_model.hdf5", overwrite=True)
+            model.fit(X, y, batch_size=batch_size,
+                      epochs=10,
+                      verbose=1,
+                      callbacks=[reduce_lr],
+                      shuffle=True,
+                      validation_split=0.2)
 
+            model.save(model_file, overwrite=True)
 
-        pred_y = model.predict(X).flatten()
-        print (pred_y.shape, _y.shape)
-
-        plt.scatter(_y, pred_y)
-        plt.xlabel('True Values')
-        plt.ylabel('Predictions')
-        plt.show()
 
     if mode == "test":
-        model = keras.models.load_model("saved_model.hdf5")
-        minx, maxx = zip(*[(20.3, 21.4), (25.3, 32.5), (34.1, 82.1), (20.1, 24.5), (14.9, 22.2)])
-        minx = np.asarray(minx)
-        maxx = np.asarray(maxx)
-
-        num_samples = 10
-
-        fval = 0.5
-        for index in range(5):
-            X = []
-            for i in range(num_samples):
-                var = i / num_samples
-                v = [fval, fval, fval, fval, fval]
-                v[index] = var
-                X.append(v)
-
-            X = np.asarray(X)
-            X = np.expand_dims(X, axis=-1)
-            y = model.predict(X)
-            sns.lineplot(data=y)
-            plt.show()
-
+        test_model_variation(model_file)
+        # model = keras.models.load_model(model_file)
+        # X, y = get_data(infile)
+        # y = y.flatten()
+        # pred_y = model.predict(X).flatten()
+        # print (pred_y.shape, y.shape)
+        # data = {'predicted': pred_y, 'real': y}
+        # df = pd.DataFrame.from_dict(data)
+        # print (df)
+        # sns.lineplot(data=df)
+        # plt.show()
 
     # model.evaluate(test_X, test_y)
 
-def test_model_variation(param_name, model_path):
+def test_model_variation(model_file):
     """
     (20.3, 21.4), (25.3, 32.5), (34.1, 82.1), (20.1, 24.5), (14.9, 22.2)]
      [(24.0, 131.0)
@@ -231,16 +193,51 @@ def test_model_variation(param_name, model_path):
         'oat1',
         'oah',
         'CW_{n}_RETURN',
-        'CH_{n}/Evaporator Saturation Temp']"""
+        'CH_{n}/Evaporator Saturation Temp']
+    """
+    model = keras.models.load_model(model_file)
+    minx, maxx = zip(*[(20.3, 21.4), (25.3, 32.5), (34.1, 82.1), (20.1, 24.5), (14.9, 22.2)])
+    minx = np.asarray(minx)
+    maxx = np.asarray(maxx)
+    num_samples = 20
+    xa = []
+    ya = []
 
-    pass
+    fval = 0.3
+    x_index = 1
+    y_index = 2
+    X = []
+    for x in range(num_samples):
+        for y in range(num_samples):
+            v = [fval, fval, fval, fval, fval]
+            x_val = x / num_samples
+            y_val = y / num_samples
+            v[x_index] = x_val
+            v[y_index] = y_val
+            X.append(v)
+            xa.append(x_val)
+            ya.append(y_val)
 
+    X = np.asarray(X)
+    z = model.predict(X, batch_size=1024, verbose=True)
+    z = z[:, 0]
+    print(X.shape, z.shape)
 
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    ax.plot_trisurf(xa, ya, z, cmap=plt.cm.jet, linewidth=0.2)
+    ax.set_xlabel(DC.chiller_input_params[x_index])
+    ax.set_ylabel(DC.chiller_input_params[y_index])
+    ax.set_zlabel('Power')
 
+    plt.show()
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--infile", default=None, required=True)
+    parser.add_argument("--model", default=None, required=True)
+    parser.add_argument("--mode", default=None, required=True)
+
     args = parser.parse_args()
-    main(args.infile)
+    main(args.infile, args.model, args.mode)
