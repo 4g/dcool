@@ -37,17 +37,17 @@ data_hall_output_params = ["PUE", "PAHU-{n} TOTAL POWER"]
 
 
 param_dict = {
-    "pue_full" : [pue_full_input, pue_full_output],
-    "pahu" : [pahu_input_params, pahu_output_params],
-    "data_hall" : [data_hall_input_params, data_hall_output_params],
-    "chiller" : [chiller_input_params, chiller_output_params]
+    # "pue_full" : [pue_full_input, pue_full_output],
+    # "pahu": [pahu_input_params, pahu_output_params],
+    # "data_hall": [data_hall_input_params, data_hall_output_params],
+    "chiller": [chiller_input_params, chiller_output_params, 2]
 }
 
-system_map = {
-    chiller.input: pahu.output1,
-    chiller.output: pahu.input1,
+# system_map = {
+#     chiller.input: pahu.output1,
+#     chiller.output: pahu.input1,
+#     data_hall.input: pahu.output2,
+#     data_hall.output: pahu.input2,
+# }
 
-    data_hall.input: pahu.output2,
-    data_hall.output: pahu.input2,
-}
-
+data_file = "/home/apurva/work/projects/dcool/data/flipkart/timesorted_serialized_clean.csv"
