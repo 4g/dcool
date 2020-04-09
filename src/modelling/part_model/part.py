@@ -7,6 +7,9 @@ import csv
 from datetime import datetime
 import pandas as pd
 import numpy as np
+import seaborn as sns
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
 
 class System:
     def __init__(self):
@@ -25,14 +28,7 @@ class System:
         for part in self.parts:
             outputs = part.predict(outputs)
 
-
-
-class Part:
-    def __init__(self, name, input_params, output_params):
-        self.input_params = input_params
-        self.output_params = output_params
-        self.model = Part.create_model(len(self.input_params), len(self.output_params))
-
+class Model:
     @staticmethod
     def create_model(indim, outdim):
         input_layer = keras.layers.Input(shape=(indim))
@@ -60,9 +56,30 @@ class Part:
             lr = 0.0000001
         return lr
 
-    def load_data(self, X, y):
+
+class Part:
+    def __init__(self, name):
+        self.name = name
+        self.model = None
+
+    def set_params(self, inparams, outparams):
+        self.input_params = inparams
+        self.output_params = outparams
+
+
+    def set_data(self, data):
+        # indexNames = data[data[self.output_params[0]] < 10].index
+        # data = data.drop(indexNames)
+
+        X = data[self.input_params]
+        y = data[self.output_params]
+
         X, X_norm = Data.mean_normalize(X)
         y, y_norm = Data.minmax_normalize(y)
+
+        sns.lineplot(data=X)
+        sns.lineplot(data=y)
+        plt.show()
 
         X = X.values
         y = y.values
@@ -71,9 +88,12 @@ class Part:
         self.y = y
 
     def train_model(self):
-        reduce_lr = keras.callbacks.LearningRateScheduler(schedule=self.lrschedule, verbose=True)
-        for iteration in range(10):
-            for batch_size in [4, 16, 64, 128]:
+        if self.model is None:
+            self.model = Model.create_model(len(self.input_params), len(self.output_params))
+
+        reduce_lr = keras.callbacks.LearningRateScheduler(schedule=Model.lrschedule, verbose=True)
+        for iteration in range(1):
+            for batch_size in [4, 64]:
                 Data.shuffle_together(self.X, self.y)
                 self.model.fit(self.X, self.y, batch_size=batch_size,
                           epochs=10,
@@ -81,7 +101,6 @@ class Part:
                           callbacks=[reduce_lr],
                           shuffle=True,
                           validation_split=0.2)
-
 
     def predict(self, input):
         output = self.model.predict(input)
@@ -156,24 +175,20 @@ def main():
     system = System()
     data = Data(configs.data_file)
     data.load()
+    # print(list(data.df.columns))
 
     for part_name in param_tuples:
-        inparams, outparams, part_number = param_tuples[part_name]
-        for pn in range(1, part_number+1):
-            desc = f"Training part {part_name}"
+        _inparams, _outparams, part_number = param_tuples[part_name]
+        part = Part(part_name)
+        for pn in range(1, part_number + 1):
+            inparams = [i.format(n=pn) for i in _inparams]
+            outparams = [i.format(n=pn) for i in _outparams]
+            part.set_params(inparams, outparams)
+            part.set_data(data.df)
+
+            desc = f"Training part {part_name} with input {inparams} and output {outparams}"
             print(desc)
 
-            inparams = [i.format(n=pn) for i in inparams]
-            outparams = [i.format(n=pn) for i in outparams]
-
-            part = Part(part_name, inparams, outparams)
-            input_data = data.partition(inparams)
-            output_data = data.partition(outparams)
-
-            # print (input_data)
-            # print (output_data)
-
-            part.load_data(input_data, output_data)
             part.train_model()
             system.add_part(part)
 
