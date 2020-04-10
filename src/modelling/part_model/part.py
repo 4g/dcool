@@ -175,6 +175,7 @@ def main():
     system = System()
     data = Data(configs.data_file)
     data.load()
+
     # print(list(data.df.columns))
 
     for part_name in param_tuples:
