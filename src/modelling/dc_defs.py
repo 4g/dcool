@@ -71,6 +71,7 @@ def number_free_params(all_params):
         for c in d_map:
             unique_params[tmp][c] = unique_params[tmp].get(c, [])
             unique_params[tmp][c].append(d_map[c])
+
 unique_params = number_free_params(all_params)
 
 unique_params_names = ['timestamp',
@@ -123,7 +124,8 @@ chiller_output_params = ['CH_{n}_POWER',
                          # 'CH_{n}_SUPPLY'
                          ]
 
-chiller_input_params = ['CH_{n}/Evaporator Saturation Temp',
+chiller_input_params = [
+                        'CH_{n}/Evaporator Saturation Temp',
                         'CH_{n}_RETURN',
                         'oat1',
                         'oah'
@@ -135,7 +137,11 @@ pue_full_output = ['PDU/ZONE_2/PUE']
 pahu_input_params = ["PAHU_SA_SP", "PAHU_RA_SP", "PAHU RETURN_TEMP"]
 pahu_output_params = ["PAHU FAN_SPEED", "PAHU SUP_TEMP"]
 
-data_hall_input_params = ["POD TEMP-{n}", "POD HUM-{n}", "PAHU RA SP", "PAHU SA SP", "CH_{n}_SUPPLY", "IT LOAD"]
+data_hall_input_params = ['HUMIDITY_SENSOR/Z{m}S{n}_PDU_HUMI_{k}',
+                          'TEMP_SENSOR/Z{m}S{n}_PDU_TEMP_{k}',
+                          'SF/Z{m} PAHU {n}/RETURN_TEMP',
+                          'SF/Z{m} PAHU {n}/SUP_TEMP']
+
 data_hall_output_params = ["PUE", "PAHU-{n} TOTAL POWER"]
 
 
@@ -153,4 +159,4 @@ param_dict = {
 #     data_hall.output: pahu.input2,
 # }
 
-data_file = "/home/apurva/work/projects/dcool/data/flipkart/timesorted_serialized_dec.csv"
+data_file = "/home/apurva/work/projects/dcool/data/flipkart/timesorted_serialized_clean.csv"
