@@ -10,6 +10,7 @@ import numpy as np
 import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 class System:
     def __init__(self):
@@ -57,19 +58,21 @@ class Model:
         return lr
 
 
-class Part:
+class ParameterModel:
     def __init__(self, name):
         self.name = name
         self.model = None
+        self.X = None
+        self.y = None
 
     def set_params(self, inparams, outparams):
         self.input_params = inparams
         self.output_params = outparams
 
 
-    def set_data(self, data):
-        # indexNames = data[data[self.output_params[0]] < 10].index
-        # data = data.drop(indexNames)
+    def add_data(self, data):
+        indexNames = data[data[self.output_params[0]] < 10].index
+        data = data.drop(indexNames)
 
         X = data[self.input_params]
         y = data[self.output_params]
@@ -77,19 +80,32 @@ class Part:
         X, X_norm = Data.mean_normalize(X)
         y, y_norm = Data.minmax_normalize(y)
 
-        sns.lineplot(data=X)
-        sns.lineplot(data=y)
-        plt.show()
+        # sns.lineplot(data=X)
+        # sns.lineplot(data=y)
+        # plt.show()
 
-        X = X.values
-        y = y.values
+        _X = X.values
+        _y = y.values
 
-        self.X = X
-        self.y = y
+        if self.X is None:
+            self.X = X
+            self.y = y
+        else:
+            self.X = np.concatenate((self.X, _X), axis=0)
+            self.y = np.concatenate((self.y, _y), axis=0)
+
+
 
     def train_model(self):
         if self.model is None:
             self.model = Model.create_model(len(self.input_params), len(self.output_params))
+
+        from sklearn.preprocessing import scale
+        print (self.X.shape, self.y.shape)
+        print (self.model.summary())
+
+        # self.X = scale(self.X, axis=0)
+        # self.y = scale(self.y, axis=0, with_mean=False)
 
         reduce_lr = keras.callbacks.LearningRateScheduler(schedule=Model.lrschedule, verbose=True)
         for iteration in range(1):
@@ -107,6 +123,10 @@ class Part:
         output_dict = {}
         return output_dict
 
+    def save_model(self, model_dir):
+        model_file = Path(model_dir) / (self.name + ".hdf5")
+        keras.models.save_model(self.model, model_file)
+
 
 class Data:
     def __init__(self, f):
@@ -121,7 +141,7 @@ class Data:
             data[param].append((timestamp, float(value)))
 
         data_dict = {}
-        for param in tqdm(data, desc="Preparing by timestamps ..."):
+        for param in tqdm(data, desc="Preparing each param ..."):
             for ts, val in data[param]:
                 o_ts = datetime.strptime(ts, '%d-%b-%y %H:%M:%S %p %Z')
                 o_ts = o_ts.replace(second=0)
@@ -168,9 +188,9 @@ class Data:
     def preprocess(self):
         pass
 
-def main():
+def main(sensor_csv_file, model_dir):
     import dc_defs as configs
-    param_tuples = configs.param_dict
+    part_configs = configs.parts
 
     system = System()
     data = Data(configs.data_file)
@@ -178,21 +198,25 @@ def main():
 
     # print(list(data.df.columns))
 
-    for part_name in param_tuples:
-        _inparams, _outparams, part_number = param_tuples[part_name]
-        part = Part(part_name)
-        for pn in range(1, part_number + 1):
-            inparams = [i.format(n=pn) for i in _inparams]
-            outparams = [i.format(n=pn) for i in _outparams]
+    for part_name in part_configs:
+        part = ParameterModel(part_name)
+        for part_config in part_configs[part_name]:
+            inparams = part_config["input"]
+            outparams = part_config["output"]
             part.set_params(inparams, outparams)
-            part.set_data(data.df)
-
-            desc = f"Training part {part_name} with input {inparams} and output {outparams}"
+            desc = f"Adding part {part_name} with input {inparams} and output {outparams}"
             print(desc)
-
-            part.train_model()
-            system.add_part(part)
+            part.add_data(data.df)
+        print (f"Training part {part_name}")
+        part.train_model()
+        part.save_model(model_dir)
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--infile", default=None, required=True)
+    parser.add_argument("--output", default=None, required=True)
+
+    args = parser.parse_args()
+    main(args.infile, args.output)
 

@@ -72,6 +72,8 @@ def number_free_params(all_params):
             unique_params[tmp][c] = unique_params[tmp].get(c, [])
             unique_params[tmp][c].append(d_map[c])
 
+    return unique_params
+
 unique_params = number_free_params(all_params)
 
 unique_params_names = ['timestamp',
@@ -120,13 +122,13 @@ unique_params_names = ['timestamp',
 #                         'CW_{n}_SUPPLY',
 #                         'CH_{n}/Evaporator Saturation Temp']
 
-chiller_output_params = ['CH_{n}_POWER',
-                         # 'CH_{n}_SUPPLY'
+chiller_output_params = ['CH_{m}_POWER',
+                         # 'CH_{m}_SUPPLY'
                          ]
 
 chiller_input_params = [
-                        'CH_{n}/Evaporator Saturation Temp',
-                        'CH_{n}_RETURN',
+                        'CH_{m}/Evaporator Saturation Temp',
+                        'CH_{m}_RETURN',
                         'oat1',
                         'oah'
                         ]
@@ -134,8 +136,8 @@ chiller_input_params = [
 pue_full_input = ['PDU/ZONE_2/DC_TOTAL_LOAD', 'oat1', 'oah', 'CH_{n}/Evaporator Saturation Temp']
 pue_full_output = ['PDU/ZONE_2/PUE']
 
-pahu_input_params = ["PAHU_SA_SP", "PAHU_RA_SP", "PAHU RETURN_TEMP"]
-pahu_output_params = ["PAHU FAN_SPEED", "PAHU SUP_TEMP"]
+pahu_input_params = ["SF/Z{m} PAHU {n}/RETURN_TEMP", 'SF/Z{m} PAHU {n}/SUP_TEMP']
+pahu_output_params = ['SF/Z{m} PAHU {n}/FAN_SPEED']
 
 data_hall_input_params = ['HUMIDITY_SENSOR/Z{m}S{n}_PDU_HUMI_{k}',
                           'TEMP_SENSOR/Z{m}S{n}_PDU_TEMP_{k}',
@@ -144,12 +146,39 @@ data_hall_input_params = ['HUMIDITY_SENSOR/Z{m}S{n}_PDU_HUMI_{k}',
 
 data_hall_output_params = ["PUE", "PAHU-{n} TOTAL POWER"]
 
+#
+# param_dict = {
+#     # "pue_full" : [pue_full_input, pue_full_output, 1],
+#     # "pahu": [pahu_input_params, pahu_output_params],
+#     # "data_hall": [data_hall_input_params, data_hall_output_params],
+#     "chiller": [chiller_input_params, chiller_output_params]
+# }
 
-param_dict = {
-    "pue_full" : [pue_full_input, pue_full_output, 1],
-    # "pahu": [pahu_input_params, pahu_output_params],
-    # "data_hall": [data_hall_input_params, data_hall_output_params],
-    "chiller": [chiller_input_params, chiller_output_params, 2]
+fill = lambda x, y, n: [i.format(**{y:n}) for i in x]
+INP = "input"
+OUT = "output"
+
+# make chillers
+chillers = []
+for m in [1,2]:
+    c = {INP: fill(chiller_input_params, "m", m),
+     OUT: fill(chiller_output_params, "m", m)}
+    chillers.append(c)
+
+
+# make pahus
+pahus = []
+for m in [1, 2]:
+    for n in [1, 2, 3, 4, 5, 6, 7, 8]:
+        c = {INP: [p.format(m=m, n=n) for p in pahu_input_params],
+         OUT: [p.format(m=m, n=n) for p in pahu_output_params]}
+
+        pahus.append(c)
+
+
+parts = {
+    "chiller": chillers,
+    "pahu": pahus
 }
 
 # system_map = {
