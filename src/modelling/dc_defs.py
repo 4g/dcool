@@ -152,7 +152,7 @@ chiller_input_params = [
 # pue_full_input = ['PDU/ZONE_2/DC_TOTAL_LOAD', 'oat1', 'oah', 'CH_{n}/Evaporator Saturation Temp']
 # pue_full_output = ['PDU/ZONE_2/PUE']
 
-pahu_input_params = ["SF/Z{m} PAHU {n}/RETURN_TEMP", 'SF/Z{m} PAHU {n}/SUP_TEMP']
+pahu_input_params = ["SF/Z{m} PAHU {n}/RETURN_TEMP", 'SF/Z{m} PAHU {n}/SUP_TEMP', 'CH_1_SUPPLY', 'CH_2_SUPPLY']
 pahu_output_params = ['SF/Z{m} PAHU {n}/FAN_SPEED']
 
 pue_full_input = ['HUMIDITY_SENSOR/Z{m}S{n}_PDU_HUMI_{k}',
@@ -212,7 +212,7 @@ for param in pue_full_output:
 # ================= DONE MAKING ======================
 
 parts = {
-    "chiller": chillers,
+    # "chiller": chillers,
     "pahu": pahus,
     # "pue":pue_part,
 }

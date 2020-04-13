@@ -75,9 +75,12 @@ class ParameterModel:
 
         X = data[self.input_params]
         y = data[self.output_params]
+        #
+        # print (X)
+        # print (y)
 
-        X, X_norm = Data.mean_normalize(X)
-        y, y_norm = Data.minmax_normalize(y)
+        # X, X_norm = Data.mean_normalize(X)
+        # y, y_norm = Data.minmax_normalize(y)
 
         # sns.lineplot(data=X)
         # sns.lineplot(data=y)
@@ -85,6 +88,8 @@ class ParameterModel:
 
         _X = X.to_numpy()
         _y = y.to_numpy()
+
+        print (_y)
 
         if self.X is None:
             self.X = _X
@@ -112,8 +117,8 @@ class ParameterModel:
         # sns.lineplot(data=self.y)
         # plt.savefig(self.name + ".png")
 
-        # self.X = scale(self.X, axis=0)
-        # self.y = scale(self.y, axis=0, with_mean=False)
+        self.X = scale(self.X, axis=0)
+        self.y = scale(self.y, axis=0, with_mean=False)
 
         reduce_lr = keras.callbacks.LearningRateScheduler(schedule=Model.lrschedule, verbose=True)
         for iteration in range(1):

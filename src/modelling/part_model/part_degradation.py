@@ -7,7 +7,6 @@ from pathlib import Path
 
 def model_test(model, X, y, idname, debug_dir):
     # model = part.model
-
     score = model.evaluate(X, y)
     print(score)
 
@@ -23,7 +22,7 @@ def model_test(model, X, y, idname, debug_dir):
     plt.clf()
     return score
 
-def test(sensor_csv_file, model_dir, debug):
+def measure_degradation(sensor_csv_file, model_dir, debug):
     part_configs = configs.parts
     data = Data(sensor_csv_file)
     data.load()
