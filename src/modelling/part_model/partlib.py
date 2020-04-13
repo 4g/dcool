@@ -79,8 +79,8 @@ class ParameterModel:
         # print (X)
         # print (y)
 
-        # X, X_norm = Data.mean_normalize(X)
-        # y, y_norm = Data.minmax_normalize(y)
+        X, X_norm = Data.mean_normalize(X)
+        y, y_norm = Data.minmax_normalize(y)
 
         # sns.lineplot(data=X)
         # sns.lineplot(data=y)

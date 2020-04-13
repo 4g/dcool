@@ -155,13 +155,11 @@ chiller_input_params = [
 pahu_input_params = ["SF/Z{m} PAHU {n}/RETURN_TEMP", 'SF/Z{m} PAHU {n}/SUP_TEMP', 'CH_1_SUPPLY', 'CH_2_SUPPLY']
 pahu_output_params = ['SF/Z{m} PAHU {n}/FAN_SPEED']
 
-pue_full_input = ['HUMIDITY_SENSOR/Z{m}S{n}_PDU_HUMI_{k}',
-                  'TEMP_SENSOR/Z{m}S{n}_PDU_TEMP_{k}',
-                  'oat{m}', 'oah', 'PDU/ZONE_{m}/DC_TOTAL_LOAD']
+data_hall_inputs = ['HUMIDITY_SENSOR/Z{m}S{n}_PDU_HUMI_{k}',
+                    'TEMP_SENSOR/Z{m}S{n}_PDU_TEMP_{k}',
+                    'SF/Z{m} PAHU {n}/SUP_TEMP']
 
-pue_full_output = ['PDU/ZONE_2/PUE']
-
-data_hall_output_params = ["PUE", "PAHU-{n} TOTAL POWER"]
+data_hall_outputs = ['SF/Z{m} PAHU {n}/SUP_TEMP']
 
 #
 # param_dict = {
@@ -198,24 +196,25 @@ for m in [1, 2]:
 
 # make PUE =================
 pues = []
-pue_inputs = []
-pue_outputs = []
+_i = []
+_o = []
 
-pue_part = [{INP: pue_inputs, OUT: pue_outputs}]
+data_hall_part = [{INP: _i, OUT: _o}]
 
-for param in pue_full_input:
-    pue_inputs.extend(expand_param(param))
+for param in data_hall_inputs:
+    _i.extend(expand_param(param))
 
-for param in pue_full_output:
-    pue_outputs.extend(expand_param(param))
+for param in data_hall_outputs:
+    _o.extend(expand_param(param))
 
 # ================= DONE MAKING ======================
 
 parts = {
     # "chiller": chillers,
-    "pahu": pahus,
+    # "pahu": pahus,
     # "pue":pue_part,
-}
+    "data_hall": data_hall_part
+    }
 
 # system_map = {
 #     chiller.input: pahu.output1,
