@@ -71,8 +71,8 @@ class ParameterModel:
 
 
     def add_data(self, data):
-        indexNames = data[data[self.output_params[0]] < 10].index
-        data = data.drop(indexNames)
+        # indexNames = data[data[self.output_params[0]] < 10].index
+        # data = data.drop(indexNames)
 
         X = data[self.input_params]
         y = data[self.output_params]
@@ -84,8 +84,10 @@ class ParameterModel:
         # sns.lineplot(data=y)
         # plt.show()
 
-        _X = X.values
-        _y = y.values
+        _X = X.to_numpy()
+        _y = y.to_numpy()
+
+
 
         if self.X is None:
             self.X = X
@@ -101,8 +103,15 @@ class ParameterModel:
             self.model = Model.create_model(len(self.input_params), len(self.output_params))
 
         from sklearn.preprocessing import scale
+        # self.X = self.X.to_numpy()
+        # self.y = self.y.to_numpy()
+
         print (self.X.shape, self.y.shape)
         print (self.model.summary())
+        #
+        # sns.lineplot(data=self.X)
+        # sns.lineplot(data=self.y)
+        # plt.savefig(self.name + ".png")
 
         # self.X = scale(self.X, axis=0)
         # self.y = scale(self.y, axis=0, with_mean=False)
@@ -185,6 +194,9 @@ class Data:
         np.random.set_state(rng_state)
         np.random.shuffle(b)
 
+    def is_present(self, param):
+        return param in set(self.df.columns)
+
     def preprocess(self):
         pass
 
@@ -203,6 +215,9 @@ def main(sensor_csv_file, model_dir):
         for part_config in part_configs[part_name]:
             inparams = part_config["input"]
             outparams = part_config["output"]
+
+            inparams = list(filter(data.is_present, inparams))
+
             part.set_params(inparams, outparams)
             desc = f"Adding part {part_name} with input {inparams} and output {outparams}"
             print(desc)
