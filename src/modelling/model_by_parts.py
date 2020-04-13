@@ -81,10 +81,7 @@ def partition_data(infile, tags, input_params, output_params):
     df.drop(indexNames, inplace=True)
 
     X = df[input_params]
-
-
     y = df[output_params]
-
 
     # sns.lineplot(data=X)
     # sns.lineplot(data=y)

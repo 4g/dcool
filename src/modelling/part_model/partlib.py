@@ -69,7 +69,6 @@ class ParameterModel:
         self.input_params = inparams
         self.output_params = outparams
 
-
     def add_data(self, data):
         # indexNames = data[data[self.output_params[0]] < 10].index
         # data = data.drop(indexNames)
@@ -87,16 +86,16 @@ class ParameterModel:
         _X = X.to_numpy()
         _y = y.to_numpy()
 
-
-
         if self.X is None:
-            self.X = X
-            self.y = y
+            self.X = _X
+            self.y = _y
         else:
             self.X = np.concatenate((self.X, _X), axis=0)
             self.y = np.concatenate((self.y, _y), axis=0)
 
-
+    def reset_data(self):
+        self.X = None
+        self.y = None
 
     def train_model(self):
         if self.model is None:
@@ -135,6 +134,11 @@ class ParameterModel:
     def save_model(self, model_dir):
         model_file = Path(model_dir) / (self.name + ".hdf5")
         keras.models.save_model(self.model, model_file)
+
+    def load_model(self, model_dir):
+        model_file = Path(model_dir) / (self.name + ".hdf5")
+        print (model_file)
+        self.model = keras.models.load_model(model_file)
 
 
 class Data:
@@ -199,39 +203,3 @@ class Data:
 
     def preprocess(self):
         pass
-
-def main(sensor_csv_file, model_dir):
-    import dc_defs as configs
-    part_configs = configs.parts
-
-    system = System()
-    data = Data(configs.data_file)
-    data.load()
-
-    # print(list(data.df.columns))
-
-    for part_name in part_configs:
-        part = ParameterModel(part_name)
-        for part_config in part_configs[part_name]:
-            inparams = part_config["input"]
-            outparams = part_config["output"]
-
-            inparams = list(filter(data.is_present, inparams))
-
-            part.set_params(inparams, outparams)
-            desc = f"Adding part {part_name} with input {inparams} and output {outparams}"
-            print(desc)
-            part.add_data(data.df)
-        print (f"Training part {part_name}")
-        part.train_model()
-        part.save_model(model_dir)
-
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--infile", default=None, required=True)
-    parser.add_argument("--output", default=None, required=True)
-
-    args = parser.parse_args()
-    main(args.infile, args.output)
-

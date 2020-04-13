@@ -174,13 +174,15 @@ data_hall_output_params = ["PUE", "PAHU-{n} TOTAL POWER"]
 fill = lambda x, y, n: [i.format(**{y:n}) for i in x]
 INP = "input"
 OUT = "output"
+NAME = "name"
 
 
 # make CHILLERS =================
 chillers = []
-for m in [1,2]:
+for m in [1, 2]:
     c = {INP: fill(chiller_input_params, "m", m),
-     OUT: fill(chiller_output_params, "m", m)}
+     OUT: fill(chiller_output_params, "m", m),
+     NAME: f"chiller_{m}"}
     chillers.append(c)
 
 
@@ -189,7 +191,8 @@ pahus = []
 for m in [1, 2]:
     for n in [1, 2, 3, 4, 5, 6, 7, 8]:
         c = {INP: [p.format(m=m, n=n) for p in pahu_input_params],
-         OUT: [p.format(m=m, n=n) for p in pahu_output_params]}
+         OUT: [p.format(m=m, n=n) for p in pahu_output_params],
+         NAME: f"pahu_{m}_{n}"}
 
         pahus.append(c)
 
@@ -198,7 +201,7 @@ pues = []
 pue_inputs = []
 pue_outputs = []
 
-pue_part = [{INP:pue_inputs, OUT:pue_outputs}]
+pue_part = [{INP: pue_inputs, OUT: pue_outputs}]
 
 for param in pue_full_input:
     pue_inputs.extend(expand_param(param))
@@ -206,12 +209,12 @@ for param in pue_full_input:
 for param in pue_full_output:
     pue_outputs.extend(expand_param(param))
 
-# ================= DONE MAKING =====
+# ================= DONE MAKING ======================
 
 parts = {
-    # "chiller": chillers,
-    # "pahu": pahus,
-    "pue":pue_part,
+    "chiller": chillers,
+    "pahu": pahus,
+    # "pue":pue_part,
 }
 
 # system_map = {
@@ -221,4 +224,4 @@ parts = {
 #     data_hall.output: pahu.input2,
 # }
 
-data_file = "/home/apurva/work/projects/dcool/data/flipkart/timesorted_serialized_clean.csv"
+data_file = "/home/apurva/work/projects/dcool/data/flipkart/timesorted_serialized_dec.csv"
