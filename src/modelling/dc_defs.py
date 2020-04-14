@@ -139,7 +139,7 @@ def expand_param(param):
 #                         'CH_{n}/Evaporator Saturation Temp']
 
 chiller_output_params = ['CH_{m}_POWER',
-                         # 'CH_{m}_SUPPLY'
+                         'CH_{m}_SUPPLY'
                          ]
 
 chiller_input_params = [
@@ -210,9 +210,8 @@ for param in data_hall_outputs:
 # ================= DONE MAKING ======================
 
 parts = {
-    # "chiller": chillers,
-    # "pahu": pahus,
-    # "pue":pue_part,
+    "chiller": chillers,
+    "pahu": pahus,
     "data_hall": data_hall_part
     }
 

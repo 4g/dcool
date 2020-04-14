@@ -45,16 +45,12 @@ class Model:
 
     @staticmethod
     def lrschedule(epoch, lr):
-        if epoch < 5:
+        if epoch < 15:
             lr = 0.001
-        elif epoch < 10:
+        elif epoch < 30:
             lr = 0.0001
-        elif epoch < 15:
-            lr = 0.00001
-        elif epoch < 25:
-            lr = 0.000001
         else:
-            lr = 0.0000001
+            lr = 0.00001
         return lr
 
 
@@ -89,7 +85,7 @@ class ParameterModel:
         _X = X.to_numpy()
         _y = y.to_numpy()
 
-        print (_y)
+        # print (_y)
 
         if self.X is None:
             self.X = _X
@@ -116,16 +112,16 @@ class ParameterModel:
         # sns.lineplot(data=self.X)
         # sns.lineplot(data=self.y)
         # plt.savefig(self.name + ".png")
-
-        self.X = scale(self.X, axis=0)
-        self.y = scale(self.y, axis=0, with_mean=False)
+        #
+        # self.X = scale(self.X, axis=0)
+        # self.y = scale(self.y, axis=0, with_mean=False)
 
         reduce_lr = keras.callbacks.LearningRateScheduler(schedule=Model.lrschedule, verbose=True)
         for iteration in range(1):
-            for batch_size in [4, 64]:
+            for batch_size in [64, 16, 64]:
                 Data.shuffle_together(self.X, self.y)
                 self.model.fit(self.X, self.y, batch_size=batch_size,
-                          epochs=10,
+                          epochs=30,
                           verbose=1,
                           callbacks=[reduce_lr],
                           shuffle=True,
