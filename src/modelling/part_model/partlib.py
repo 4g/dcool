@@ -155,10 +155,15 @@ class Data:
             data[param].append((timestamp, float(value)))
 
         data_dict = {}
+        time_cache = {}
         for param in tqdm(data, desc="Preparing each param ..."):
             for ts, val in data[param]:
-                o_ts = datetime.strptime(ts, '%d-%b-%y %H:%M:%S %p %Z')
-                o_ts = o_ts.replace(second=0)
+                if ts not in time_cache:
+                    o_ts = datetime.strptime(ts, '%d-%b-%y %H:%M:%S %p %Z')
+                    o_ts = o_ts.replace(second=0)
+                    time_cache[ts] = o_ts
+
+                o_ts = time_cache[ts]
                 data_dict[o_ts] = data_dict.get(o_ts, {})
                 data_dict[o_ts][param] = max(val, data_dict[o_ts].get(param, -1))
 

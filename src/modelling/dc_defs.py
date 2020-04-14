@@ -157,7 +157,9 @@ pahu_output_params = ['SF/Z{m} PAHU {n}/FAN_SPEED']
 
 data_hall_inputs = ['HUMIDITY_SENSOR/Z{m}S{n}_PDU_HUMI_{k}',
                     'TEMP_SENSOR/Z{m}S{n}_PDU_TEMP_{k}',
-                    'SF/Z{m} PAHU {n}/SUP_TEMP']
+                    'SF/Z{m} PAHU {n}/SUP_TEMP',
+                    'SF/Z{m} PAHU {n}/FAN_SPEED'
+                    ]
 
 data_hall_outputs = ['SF/Z{m} PAHU {n}/SUP_TEMP']
 
