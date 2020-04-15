@@ -4,24 +4,36 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
+import random
+from pathlib import Path
 
-def multivariate_data(dataset, target, start_index, end_index, history_size,
-                      target_size, step, single_step=False):
+rng_state = random.getstate()
+
+
+def multivariate_data(dataset, target, split_ratio, history_size,
+                      target_size, step, train=True, single_step=False):
     """
     Taken from https://www.tensorflow.org/tutorials/structured_data/time_series
     Chops into time slices of data
     splits the "dataset" into history_size chunks
     and "target" into "step" size chunks
     """
+    random.setstate(rng_state)
+
     data = []
     labels = []
 
-    start_index = start_index + history_size
-    if end_index is None:
-        end_index = len(dataset) - target_size
+    start_index = history_size
+    end_index = len(dataset) - target_size
 
     for i in range(start_index, end_index):
         indices = range(i-history_size, i, step)
+        r = random.random()
+        if r >= split_ratio and train:
+            continue
+        elif r < split_ratio and not train:
+            continue
+
         data.append(dataset[indices])
 
         if single_step:
@@ -37,13 +49,24 @@ def normalize(dataset):
     dataset = (dataset - data_mean) / data_std
     return dataset
 
-def train(sensor_csv_file, model_dir):
-    # first do only for zone 1 and pod 1
-    dh_h = ['HUMIDITY_SENSOR/Z1S1_PDU_HUMI_1']
-    dh_t = ['TEMP_SENSOR/Z1S1_PDU_TEMP_1']
+def train_all(sensor_csv_file, model_dir):
+    def _iter():
+        for z in [1, 2]:
+            for s in [1, 2]:
+                for p in [1, 2, 3, 4, 5, 6, 7]:
+                    yield z, s, p
 
-    pa_t = ['SF/Z1 PAHU {n}/SUP_TEMP'.format(n=n) for n in range(1, 9)]
-    pa_f = ['SF/Z1 PAHU {n}/FAN_SPEED'.format(n=n) for n in range(1, 9)]
+    for z,s,p in _iter():
+        model = train(sensor_csv_file, z, s, p)
+        tf.keras.models.save_model(model, Path(model_dir) / "data_hall_ts_Z{z}S{s}P{p}.hdf5".format(z=z,s=s,p=p))
+
+
+def train(sensor_csv_file, z, s, p):
+    dh_h = ['HUMIDITY_SENSOR/Z{z}S{s}_PDU_HUMI_{p}'.format(z=z, s=s, p=p)]
+    dh_t = ['TEMP_SENSOR/Z{z}S{s}_PDU_TEMP_{p}'.format(z=z, s=s, p=p)]
+
+    pa_t = ['SF/Z{z} PAHU {n}/SUP_TEMP'.format(z=z, n=n) for n in range(1, 9)]
+    pa_f = ['SF/Z{z} PAHU {n}/FAN_SPEED'.format(z=z, n=n) for n in range(1, 9)]
 
     flatten = lambda l:list(set([item for sublist in l for item in sublist]))
 
@@ -74,20 +97,21 @@ def train(sensor_csv_file, model_dir):
     past_history = 20
     future_target = 20
     STEP = 1
-    TRAIN_SPLIT = int(0.8 * len(data_hall_i))
+    TRAIN_SPLIT = 0.8
 
-    x_train, y_train = multivariate_data(data_hall_i, data_hall_o, 0,
+    x_train, y_train = multivariate_data(data_hall_i, data_hall_o,
                                                      TRAIN_SPLIT, past_history,
-                                                     future_target, STEP)
+                                                     future_target, STEP, train=True)
 
     x_val, y_val = multivariate_data(data_hall_i, data_hall_o,
-                                                 TRAIN_SPLIT, None, past_history,
-                                                 future_target, STEP)
+                                                 TRAIN_SPLIT, past_history,
+                                                 future_target, STEP, train=False)
 
     print (x_train.shape, y_train.shape)
+    print (x_val.shape, y_val.shape)
 
-    BATCH_SIZE = 32
-    BUFFER_SIZE = 32
+    BATCH_SIZE = 64
+    BUFFER_SIZE = 64
 
     train_data_multi = tf.data.Dataset.from_tensor_slices((x_train, y_train))
     train_data_multi = train_data_multi.cache().shuffle(BUFFER_SIZE).batch(BATCH_SIZE).repeat()
@@ -106,13 +130,28 @@ def train(sensor_csv_file, model_dir):
     multi_step_model.compile(optimizer=tf.keras.optimizers.RMSprop(clipvalue=1.0), loss='mae')
     multi_step_model.summary()
 
+    def lrschedule(epoch, lr):
+        if epoch < 5:
+            lr = 0.001
+        elif epoch < 10:
+            lr = 0.0001
+        else:
+            lr = 0.00001
+        return lr
+
+    reduce_lr = keras.callbacks.LearningRateScheduler(schedule=lrschedule, verbose=True)
+
     EVALUATION_INTERVAL = 200
-    EPOCHS = 10
+    EPOCHS = 15
 
     multi_step_history = multi_step_model.fit(train_data_multi, epochs=EPOCHS,
-                                              steps_per_epoch=5000,
+                                              steps_per_epoch=3000,
                                               validation_data=val_data_multi,
-                                              validation_steps=500)
+                                              validation_steps=750,
+                                              callbacks=[reduce_lr])
+
+    return multi_step_model
+
 
 if __name__ == "__main__":
     import argparse
@@ -121,5 +160,5 @@ if __name__ == "__main__":
     parser.add_argument("--output", default=None, required=True)
 
     args = parser.parse_args()
-    train(args.infile, args.output)
+    train_all(args.infile, args.output)
 
