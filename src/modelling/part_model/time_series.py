@@ -50,6 +50,13 @@ def normalize(dataset):
     dataset = (dataset - data_mean) / data_std
     return dataset
 
+def normalize_minmax(dataset):
+    data_min = dataset.min(axis=0)
+    data_max = dataset.max(axis=0)
+    dataset = (dataset - data_min) / (data_max - data_min)
+    return dataset
+
+
 def _iter():
     for z in [1]:
         for s in [1]:
@@ -101,7 +108,7 @@ def get_data(sensor_csv_file, z, s, p):
     data_hall_o = data.partition(output_params).values
 
     data_hall_i = normalize(dataset=data_hall_i)
-    data_hall_o = normalize(dataset=data_hall_o)
+    data_hall_o = normalize_minmax(dataset=data_hall_o)
 
     past_history = 20
     future_target = 20
@@ -158,9 +165,9 @@ def train(sensor_csv_file, z, s, p):
     EPOCHS = 15
 
     multi_step_history = multi_step_model.fit(train_data_multi, epochs=EPOCHS,
-                                              steps_per_epoch=3000,
+                                              steps_per_epoch=2000,
                                               validation_data=val_data_multi,
-                                              validation_steps=750,
+                                              validation_steps=100,
                                               callbacks=[reduce_lr])
 
     return multi_step_model
@@ -195,5 +202,5 @@ if __name__ == "__main__":
     parser.add_argument("--output", default=None, required=True)
 
     args = parser.parse_args()
-    # train_all(args.infile, args.output)
+    train_all(args.infile, args.output)
     test(args.infile, args.output)
