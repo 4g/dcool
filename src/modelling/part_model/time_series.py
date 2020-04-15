@@ -6,9 +6,10 @@ import tensorflow as tf
 from tensorflow import keras
 import random
 from pathlib import Path
+from tqdm import tqdm
 
 rng_state = random.getstate()
-
+cache = {}
 
 def multivariate_data(dataset, target, split_ratio, history_size,
                       target_size, step, train=True, single_step=False):
@@ -49,50 +50,58 @@ def normalize(dataset):
     dataset = (dataset - data_mean) / data_std
     return dataset
 
-def train_all(sensor_csv_file, model_dir):
-    def _iter():
-        for z in [1, 2]:
-            for s in [1, 2]:
-                for p in [1, 2, 3, 4, 5, 6, 7]:
-                    yield z, s, p
+def _iter():
+    for z in [1]:
+        for s in [1]:
+            for p in [1, 2, 3, 4, 5, 6, 7]:
+                yield z, s, p
 
+def train_all(sensor_csv_file, model_dir):
     for z,s,p in _iter():
         model = train(sensor_csv_file, z, s, p)
         tf.keras.models.save_model(model, Path(model_dir) / "data_hall_ts_Z{z}S{s}P{p}.hdf5".format(z=z,s=s,p=p))
 
-
-def train(sensor_csv_file, z, s, p):
+def get_params(z, s, p):
     dh_h = ['HUMIDITY_SENSOR/Z{z}S{s}_PDU_HUMI_{p}'.format(z=z, s=s, p=p)]
     dh_t = ['TEMP_SENSOR/Z{z}S{s}_PDU_TEMP_{p}'.format(z=z, s=s, p=p)]
 
     pa_t = ['SF/Z{z} PAHU {n}/SUP_TEMP'.format(z=z, n=n) for n in range(1, 9)]
     pa_f = ['SF/Z{z} PAHU {n}/FAN_SPEED'.format(z=z, n=n) for n in range(1, 9)]
 
-    flatten = lambda l:list(set([item for sublist in l for item in sublist]))
+    flatten = lambda l: list([item for sublist in l for item in sublist])
 
-    input_params = [dh_h, dh_t, pa_t, pa_f]
+    input_params = [dh_t, dh_h, pa_t, pa_f]
     output_params = [dh_t]
 
     input_params = flatten(input_params)
     output_params = flatten(output_params)
+    return input_params, output_params
 
-    data = Data(sensor_csv_file)
-    data.load()
+def get_data(sensor_csv_file, z, s, p):
+    input_params, output_params = get_params(z, s, p)
+    if "data" not in cache:
+        data = Data(sensor_csv_file)
+        data.load()
+        cache['data'] = data
+    data = cache["data"]
 
     input_params = list(filter(data.is_present, input_params))
     output_params = list(filter(data.is_present, output_params))
+    print (input_params)
 
-    print(input_params)
-    print(output_params)
+    for i, inp in enumerate(input_params):
+        if "TEMP_SENSOR" in inp:
+            print(i)
+
+
+    # print(input_params)
+    # print(output_params)
 
     data_hall_i = data.partition(input_params).values
     data_hall_o = data.partition(output_params).values
 
     data_hall_i = normalize(dataset=data_hall_i)
     data_hall_o = normalize(dataset=data_hall_o)
-
-    # data_hall_i.plot(subplots=False)
-    # plt.show()
 
     past_history = 20
     future_target = 20
@@ -107,9 +116,13 @@ def train(sensor_csv_file, z, s, p):
                                                  TRAIN_SPLIT, past_history,
                                                  future_target, STEP, train=False)
 
-    print (x_train.shape, y_train.shape)
-    print (x_val.shape, y_val.shape)
+    # print (x_train.shape, y_train.shape)
+    # print (x_val.shape, y_val.shape)
 
+    return x_train, y_train, x_val, y_val
+
+def train(sensor_csv_file, z, s, p):
+    x_train, y_train, x_val, y_val = get_data(sensor_csv_file, z, s, p)
     BATCH_SIZE = 64
     BUFFER_SIZE = 64
 
@@ -125,7 +138,7 @@ def train(sensor_csv_file, z, s, p):
                                               input_shape=x_train.shape[-2:]))
 
     multi_step_model.add(tf.keras.layers.LSTM(16, return_sequences=True, activation='relu'))
-    multi_step_model.add(tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(len(output_params))))
+    multi_step_model.add(tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(1, activation='relu')))
 
     multi_step_model.compile(optimizer=tf.keras.optimizers.RMSprop(clipvalue=1.0), loss='mae')
     multi_step_model.summary()
@@ -152,6 +165,28 @@ def train(sensor_csv_file, z, s, p):
 
     return multi_step_model
 
+def test(sensor_csv_file, model_dir):
+    models = {}
+    initial_states = {}
+    for z, s, p in tqdm(list(_iter()), "Loading models"):
+        model_name = "data_hall_ts_Z{z}S{s}P{p}.hdf5".format(z=z,s=s,p=p)
+        models[model_name] = tf.keras.models.load_model(Path(model_dir) / model_name)
+        x_train, y_train, x_val, y_val = get_data(sensor_csv_file, z, s, p)
+        initial_states[model_name] = x_train[0:1]
+
+    for iter in range(1000):
+        for model_name in models:
+            output = models[model_name].predict(initial_states[model_name]).flatten()
+            x = initial_states[model_name]
+            x[0, :, 0] = output
+
+        temps = []
+        for model_name in models:
+            temps.append(initial_states[model_name][0, 0, 0])
+
+        print (temps)
+
+
 
 if __name__ == "__main__":
     import argparse
@@ -160,5 +195,5 @@ if __name__ == "__main__":
     parser.add_argument("--output", default=None, required=True)
 
     args = parser.parse_args()
-    train_all(args.infile, args.output)
-
+    # train_all(args.infile, args.output)
+    test(args.infile, args.output)
