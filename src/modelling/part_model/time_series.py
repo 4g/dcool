@@ -174,26 +174,39 @@ def train(sensor_csv_file, z, s, p):
 
 def test(sensor_csv_file, model_dir):
     models = {}
-    initial_states = {}
+    states = {}
+    time_index = 0
     for z, s, p in tqdm(list(_iter()), "Loading models"):
         model_name = "data_hall_ts_Z{z}S{s}P{p}.hdf5".format(z=z,s=s,p=p)
         models[model_name] = tf.keras.models.load_model(Path(model_dir) / model_name)
         x_train, y_train, x_val, y_val = get_data(sensor_csv_file, z, s, p)
-        initial_states[model_name] = x_train[0:1]
+        states[model_name] = x_train
+        print (x_train[0][0])
+
+    prev_temp = None
+    temps = []
+    initial_states = {m:states[m][0:1] for m in models}
+
+    np.set_printoptions(precision=3)
 
     for iter in range(1000):
         for model_name in models:
             output = models[model_name].predict(initial_states[model_name]).flatten()
             x = initial_states[model_name]
             x[0, :, 0] = output
+            initial_states[model_name] = x
 
-        temps = []
-        for model_name in models:
-            temps.append(initial_states[model_name][0, 0, 0])
+        temps = np.asarray([initial_states[model_name][0, 0, 0] for model_name in models])
+        distance = np.linalg.norm(prev_temp - temps) if prev_temp is not None else 1
 
-        print (temps)
+        print(temps, distance)
+        if distance < 0.0001:
+            print ("STEADY STATE ACHIEVED, CHANGING TEMPS ==============")
+            time_index += 20
+            for model_name in models:
+                initial_states[model_name] = states[model_name][time_index:time_index+1]
 
-
+        prev_temp = temps
 
 if __name__ == "__main__":
     import argparse
@@ -202,5 +215,5 @@ if __name__ == "__main__":
     parser.add_argument("--output", default=None, required=True)
 
     args = parser.parse_args()
-    train_all(args.infile, args.output)
+    # train_all(args.infile, args.output)
     test(args.infile, args.output)
