@@ -212,9 +212,9 @@ for param in data_hall_outputs:
 # ================= DONE MAKING ======================
 
 parts = {
-    "chiller": chillers,
+    # "chiller": chillers,
     "pahu": pahus,
-    "data_hall": data_hall_part
+    # "data_hall": data_hall_part
     }
 
 # system_map = {

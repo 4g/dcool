@@ -7,12 +7,9 @@ from tensorflow import keras
 import random
 from pathlib import Path
 from tqdm import tqdm
-from tabulate import tabulate
 
 rng_state = random.getstate()
 cache = {}
-
-
 
 def multivariate_data(dataset, target, split_ratio, history_size,
                       target_size, step, train=True, single_step=False):
@@ -56,26 +53,15 @@ def normalize(dataset):
 def normalize_minmax(dataset):
     data_min = dataset.min(axis=0)
     data_max = dataset.max(axis=0)
-
-    # for col in list(dataset.columns):
-    #     if "TEMP" in col:
-    #         data_min[col] = 15.0
-    #         data_max[col] = 35.0
-
     dataset = (dataset - data_min) / (data_max - data_min)
     return dataset
 
 
 def _iter():
-    res = []
-    for z in [1,2]:
-        for s in [1,2]:
+    for z in [1]:
+        for s in [1]:
             for p in [1, 2, 3, 4, 5, 6, 7]:
-                res.append((z, s, p))
-
-    # + res[3:13]
-    for i in res[0:2] + res[3:8]:
-        yield i
+                yield z, s, p
 
 def train_all(sensor_csv_file, model_dir):
     for z,s,p in _iter():
@@ -108,19 +94,21 @@ def get_data(sensor_csv_file, z, s, p):
 
     input_params = list(filter(data.is_present, input_params))
     output_params = list(filter(data.is_present, output_params))
-    # print (input_params)
-    cache["params"] = input_params, output_params
+    print (input_params)
+
+    for i, inp in enumerate(input_params):
+        if "TEMP_SENSOR" in inp:
+            print(i)
+
+
     # print(input_params)
     # print(output_params)
 
-    data_hall_i = data.partition(input_params)
-    data_hall_o = data.partition(output_params)
+    data_hall_i = data.partition(input_params).values
+    data_hall_o = data.partition(output_params).values
 
-    data_hall_i = normalize_minmax(dataset=data_hall_i)
+    data_hall_i = normalize(dataset=data_hall_i)
     data_hall_o = normalize_minmax(dataset=data_hall_o)
-
-    data_hall_i = data_hall_i.values
-    data_hall_o = data_hall_o.values
 
     past_history = 20
     future_target = 20
@@ -186,49 +174,26 @@ def train(sensor_csv_file, z, s, p):
 
 def test(sensor_csv_file, model_dir):
     models = {}
-    states = {}
-    time_index = 0
-
+    initial_states = {}
     for z, s, p in tqdm(list(_iter()), "Loading models"):
         model_name = "data_hall_ts_Z{z}S{s}P{p}.hdf5".format(z=z,s=s,p=p)
         models[model_name] = tf.keras.models.load_model(Path(model_dir) / model_name)
         x_train, y_train, x_val, y_val = get_data(sensor_csv_file, z, s, p)
-        states[model_name] = x_train
-        #print (x_train[0][0])
+        initial_states[model_name] = x_train[0:1]
 
-    input_params, output_params = cache["params"]
-
-    prev_temp = None
-    temps = []
-    initial_states = {m:states[m][0:1] for m in models}
-
-    np.set_printoptions(precision=3, linewidth=300)
-    header = [n.split(".")[0].split("_")[-1] for n in models]
-    print(tabulate([header], headers="firstrow"))
     for iter in range(1000):
         for model_name in models:
             output = models[model_name].predict(initial_states[model_name]).flatten()
             x = initial_states[model_name]
             x[0, :, 0] = output
-            initial_states[model_name] = x
 
-        temps = np.asarray([initial_states[model_name][0, 0, 0] for model_name in models])
-        distance = np.linalg.norm(prev_temp - temps) if prev_temp is not None else 1
+        temps = []
+        for model_name in models:
+            temps.append(initial_states[model_name][0, 0, 0])
 
-        print(tabulate([[t*20 + 18 for t in temps]], tablefmt="plain",  floatfmt=".5f"))
+        print (temps)
 
-        # print(temps, distance)
-        if distance < 0.0001:
-            time_index += 20
-            for model_name in models:
-                initial_states[model_name] = states[model_name][time_index:time_index+1]
-            print ("\n\nSTEADY STATE ACHIEVED, CHANGING STATE ==============\n\n")
-            pahu_state = initial_states[list(models.keys())[0]][0, 0, :]
-            print ("NEW STATE IS")
-            print (tabulate(list(zip(input_params, pahu_state)), floatfmt=".5f"))
-            print(tabulate([header], headers="firstrow"))
 
-        prev_temp = temps
 
 if __name__ == "__main__":
     import argparse
@@ -239,3 +204,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     #train_all(args.infile, args.output)
     test(args.infile, args.output)
+
