@@ -5,6 +5,14 @@ from tqdm import tqdm
 from datetime import datetime
 import math
 import json
+import pandas as pd
+
+def get_dfpath(directory):
+    dffile = Path(directory) / 'flat_df.csv'
+    return dffile
+
+def get_plotdir(directory):
+    return Path(directory) / 'plots/'
 
 def list_files(directory):
     for path, dirs, files in os.walk(directory):
@@ -34,17 +42,15 @@ def read_all_csvs(directory):
             yield file_name, file_path, line
 
 
-def serialize_directory(directory, output):
+def serialize_directory(directory, dffile):
     param_files = {}
-    outfile = open(output, 'w')
-    writer = csv.writer(outfile)
+    data = {}
 
-    for dir_path, file_name in tqdm(list(list_files(directory))):
+    for dir_path, file_name in tqdm(list(list_files(directory)), "Parsing all files ... "):
         file_path = dir_path / file_name
-        tags = str(dir_path).replace(directory, "").split("/")
 
-        data = csv.reader(open(file_path, errors='ignore'))
-        header = next(data)
+        _d = csv.reader(open(file_path, errors='ignore'))
+        header = next(_d)
         param_name = header[1]
         if not param_name:
             param_name = file_name.replace(".csv", "").split("_", maxsplit=1)[1]
@@ -56,48 +62,91 @@ def serialize_directory(directory, output):
         param_files[param_name] = param_files.get(param_name, [])
         param_files[param_name].append(file_path)
 
-        for line in data:
+        for line in _d:
             param_name = param_name.strip()
             timestamp = line[0].strip()
-            # datetime_object = datetime.strptime(timestamp, '%d-%b-%y %H:%M:%S %p %Z')
             value = float(line[1])
             if math.isnan(value):
                 continue
 
-            o = [timestamp, param_name, json.dumps(tags), value]
-            writer.writerow(o)
+            data[param_name] = data.get(param_name, [])
+            data[param_name].append((timestamp, float(value)))
 
-    outfile.close()
+    data_dict = {}
+    time_cache = {}
+    for param in tqdm(data, desc="Preparing each param ..."):
+        for ts, val in data[param]:
+            if ts not in time_cache:
+                o_ts = datetime.strptime(ts, '%d-%b-%y %H:%M:%S %p %Z')
+                o_ts = o_ts.replace(second=0)
+                time_cache[ts] = o_ts
 
-def create_datafile(flatcsv, output):
-    reader = csv.reader(open(flatcsv, errors='ignore'))
-    data = dict()
-    params = set()
+            o_ts = time_cache[ts]
+            data_dict[o_ts] = data_dict.get(o_ts, {})
+            data_dict[o_ts][param] = max(val, data_dict[o_ts].get(param, -1))
 
-    outfile = open(output, 'w')
-    writer = csv.writer(outfile)
+    data_array = []
+    for ts in tqdm(sorted(data_dict), desc="Preparing DataFrame ..."):
+        _d = {"timestamp": ts}
+        for param in data_dict[ts]:
+            _d[param] = data_dict[ts][param]
+        data_array.append(_d)
 
-    for line in tqdm(reader, desc="Reading " + flatcsv):
-        timestamp, param, value = line
-        data[timestamp] = data.get(timestamp, {})
-        data[timestamp][param] = value
-        params.add(param)
+    df = pd.DataFrame(data_array)
 
-    params = list(params)
-    header = ["timestamp"] + params
-    writer.writerow(header)
+    # df.dropna(thresh=7, inplace=True)
+    # df.fillna(method='ffill', inplace=True)
+    # df.fillna(method='bfill', inplace=True)
 
-    for timestamp in tqdm(data, desc="Writing " + output):
-        values = []
-        for param in params:
-            value = data[timestamp].get(param, None)
-            values.append(value)
-        row = [timestamp] + values
-        writer.writerow(row)
+    df.to_csv(dffile, index=False)
 
-    outfile.close()
+def load_df(dffile, clean=True):
+    df = pd.read_csv(dffile)
+    if clean:
+        df.dropna(thresh=7, inplace=True)
+        df.fillna(method='ffill', inplace=True)
+        df.fillna(method='bfill', inplace=True)
+    return df
+
+def to_filename(s):
+    return s.replace("/","_").replace(" ", "_")
+
+def plots(dffile, plot_dir):
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    df = load_df(dffile)
+    columns = df.columns.tolist()
+
+    # skip the timestamp column
+    columns = columns[1:]
+
+    for col in tqdm(columns, "Saving plots ... "):
+        x = df[col]
+        sns.lineplot(data=x, ci=None)
+        plt_path = plot_dir / (to_filename(col) + ".png")
+        plt.savefig(plt_path)
+        plt.clf()
+
+def analysis(dffile):
+    df = load_df(dffile, clean=False)
+    print(f"Data shape = {df.shape}")
+    print("Null counts ====== \n", df.isna().sum(), "\n===============")
+
 
 if __name__ == "__main__":
-    import sys
-    serialize_directory(sys.argv[1], sys.argv[2])
-    # create_datafile(sys.argv[1], sys.argv[2])
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--indir", default=None, required=True)
+    parser.add_argument("--outdir", default=None, required=True)
+
+    args = parser.parse_args()
+    os.makedirs(args.outdir, exist_ok=True)
+
+    dffile = get_dfpath(args.outdir)
+    serialize_directory(args.indir, dffile)
+
+    plot_dir = get_plotdir(args.outdir)
+    os.makedirs(plot_dir, exist_ok=True)
+    plots(dffile, plot_dir)
+
+    analysis(dffile)

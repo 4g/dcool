@@ -146,38 +146,12 @@ class Data:
     def __init__(self, f):
         self.infile = f
 
-    def load(self):
-        fhandler = csv.reader(open(self.infile, errors='ignore'))
-        data = {}
-        for line in tqdm(fhandler, desc="reading data ..."):
-            timestamp, param, tags, value = line
-            data[param] = data.get(param, [])
-            data[param].append((timestamp, float(value)))
-
-        data_dict = {}
-        time_cache = {}
-        for param in tqdm(data, desc="Preparing each param ..."):
-            for ts, val in data[param]:
-                if ts not in time_cache:
-                    o_ts = datetime.strptime(ts, '%d-%b-%y %H:%M:%S %p %Z')
-                    o_ts = o_ts.replace(second=0)
-                    time_cache[ts] = o_ts
-
-                o_ts = time_cache[ts]
-                data_dict[o_ts] = data_dict.get(o_ts, {})
-                data_dict[o_ts][param] = max(val, data_dict[o_ts].get(param, -1))
-
-        data_array = []
-        for ts in tqdm(sorted(data_dict), desc="preparing DataFrame ..."):
-            _d = {"timestamp": ts}
-            for param in data_dict[ts]:
-                _d[param] = data_dict[ts][param]
-            data_array.append(_d)
-
-        df = pd.DataFrame(data_array)
-        df.dropna(thresh=7, inplace=True)
-        df.fillna(method='ffill', inplace=True)
-        df.fillna(method='bfill', inplace=True)
+    def load(self, clean=True):
+        df = pd.read_csv(self.infile)
+        if clean:
+            df.dropna(thresh=7, inplace=True)
+            df.fillna(method='ffill', inplace=True)
+            df.fillna(method='bfill', inplace=True)
         self.df = df
 
     def partition(self, params):

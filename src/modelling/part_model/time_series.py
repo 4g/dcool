@@ -74,7 +74,7 @@ def _iter():
                 res.append((z, s, p))
 
     # + res[3:13]
-    for i in res[0:2] + res[3:8]:
+    for i in res[0:2]:
         yield i
 
 def train_all(sensor_csv_file, model_dir):
@@ -174,7 +174,7 @@ def train(sensor_csv_file, z, s, p):
     reduce_lr = keras.callbacks.LearningRateScheduler(schedule=lrschedule, verbose=True)
 
     EVALUATION_INTERVAL = 200
-    EPOCHS = 15
+    EPOCHS = 30
 
     multi_step_history = multi_step_model.fit(train_data_multi, epochs=EPOCHS,
                                               steps_per_epoch=2000,
@@ -237,5 +237,5 @@ if __name__ == "__main__":
     parser.add_argument("--output", default=None, required=True)
 
     args = parser.parse_args()
-    #train_all(args.infile, args.output)
+    # train_all(args.infile, args.output)
     test(args.infile, args.output)
