@@ -38,7 +38,7 @@ class System:
         self.history = None
         self.sensor_names = []
         self.parts = []
-        self.epochs = 5
+        self.epochs = 1
         self.past_size = 20
         self.rng_state = random.getstate()
         self.steps_per_epoch = 1000
@@ -161,14 +161,14 @@ class System:
         for z, s, p in _iter():
             dh_h = ['HUMIDITY_SENSOR/Z{z}S{s}_PDU_HUMI_{p}'.format(z=z, s=s, p=p)]
             dh_t = ['TEMP_SENSOR/Z{z}S{s}_PDU_TEMP_{p}'.format(z=z, s=s, p=p)]
-            # dh_power = ['PDU/Z{z}S{s} PDU {p}/TOTAL_POWER'.format(z=s, s=s,p=p)]
+            dh_power = ['PDU/Z{z}S{s} PDU {p}/TOTAL_POWER'.format(z=s, s=s,p=p)]
 
             pa_t = ['SF/Z{z} PAHU {n}/SUP_TEMP'.format(z=z, n=n) for n in range(1, 9)]
             pa_f = ['SF/Z{z} PAHU {n}/FAN_SPEED'.format(z=z, n=n) for n in range(1, 9)]
 
             flatten = lambda l: list([item for sublist in l for item in sublist])
 
-            input_params = [dh_t, pa_t, pa_f]
+            input_params = [dh_t, pa_t, pa_f, dh_power]
             output_params = [dh_t]
 
             input_params = flatten(input_params)
