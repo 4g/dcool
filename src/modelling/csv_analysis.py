@@ -45,6 +45,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--csv", default=None, required=True)
+
     parser.add_argument("--action", required=True)
     parser.add_argument("--column", required=False, default=0)
     parser.add_argument("--start", required=False, default=0)

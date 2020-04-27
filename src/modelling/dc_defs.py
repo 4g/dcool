@@ -106,7 +106,6 @@ unique_params_names = ['timestamp',
 
                        'oat{m}', 'oah']
 
-
 def expand_param(param):
     params = []
     if param in unique_params:
