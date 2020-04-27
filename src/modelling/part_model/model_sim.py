@@ -28,11 +28,13 @@ class System:
         self.history = None
         self.sensor_names = []
         self.parts = []
-        self.epochs = 1
+        self.epochs = 5
         self.past_size = 20
         self.rng_state = random.getstate()
-        self.steps_per_epoch = 10
+        self.steps_per_epoch = 1000
         self.outdir = Path(outdir)
+        self.BATCH_SIZE = 64
+        self.BUFFER_SIZE = 64
 
     def multivariate_data(self, dataset, target, split_ratio, history_size,
                           target_size, step, train=True, single_step=False):
@@ -95,8 +97,11 @@ class System:
             input_params = flatten(input_params)
             output_params = flatten(output_params)
             part = Part()
+            input_params = list(filter(self.isparam_valid, input_params))
+            output_params = list(filter(self.isparam_valid, output_params))
             part.input_params = input_params
             part.output_params = output_params
+            part.name = f"chiller_{c}"
             chillers.append(part)
 
         return chillers
@@ -111,8 +116,8 @@ class System:
 
         pahus = []
         for z, n in _iter():
-            dh_t = ['TEMP_SENSOR/Z{z}S1_PDU_TEMP_{p}'.format(z=z, p=pdu) for pdu in range(8)]
-            dh_t += ['TEMP_SENSOR/Z{z}S2_PDU_TEMP_{p}'.format(z=z, p=pdu) for pdu in range(8)]
+            dh_t = ['TEMP_SENSOR/Z{z}S1_PDU_TEMP_{p}'.format(z=z, p=pdu) for pdu in range(1,8)]
+            dh_t += ['TEMP_SENSOR/Z{z}S2_PDU_TEMP_{p}'.format(z=z, p=pdu) for pdu in range(1,8)]
             ch_t = ['CH_1_SUPPLY', 'CH_2_SUPPLY']
 
             pa_t = ["SF/Z{z} PAHU {n}/RETURN_TEMP".format(z=z, n=n)]
@@ -125,8 +130,11 @@ class System:
             input_params = flatten(input_params)
             output_params = flatten(output_params)
             part = Part()
+            input_params = list(filter(self.isparam_valid, input_params))
+            output_params = list(filter(self.isparam_valid, output_params))
             part.input_params = input_params
             part.output_params = output_params
+            part.name = f"pahu_Z{z}_N{n}"
             pahus.append(part)
 
         return pahus
@@ -156,8 +164,11 @@ class System:
             input_params = flatten(input_params)
             output_params = flatten(output_params)
             part = Part()
+            input_params = list(filter(self.isparam_valid, input_params))
+            output_params = list(filter(self.isparam_valid, output_params))
             part.input_params = input_params
             part.output_params = output_params
+            part.name = f"pdu_Z{z}_S{s}_P{p}"
             pdus.append(part)
 
         return pdus
@@ -177,6 +188,7 @@ class System:
         return multi_step_model
 
     def get_timeseries_data(self, input_params, output_params):
+
         di = self.history[input_params]
         do = self.history[output_params]
         di = di.values
@@ -201,6 +213,7 @@ class System:
         data = Data(self.data_file)
         data.load()
         data = data.df
+        print ("Loaded data of shape ", data.shape)
         data = data.drop(columns=["timestamp"])
         data_min = data.min(axis=0)
         data_max = data.max(axis=0)
@@ -208,12 +221,16 @@ class System:
         self.history = data
         self.history_min = data_min
         self.history_max = data_max
+        self.valid_params = set(self.history.columns)
+
+    def isparam_valid(self, param):
+        return param in self.valid_params
 
     @staticmethod
     def lrschedule(epoch, lr):
-        if epoch < 5:
+        if epoch < 2:
             lr = 0.001
-        elif epoch < 10:
+        elif epoch < 5:
             lr = 0.0001
         else:
             lr = 0.00001
@@ -226,30 +243,20 @@ class System:
         pahus = self.get_pahus()
         chillers = self.get_chillers()
 
-        def name_all(l, a):
-            for i, e in enumerate(l):
-                e.name = a + str(i)
-
-        name_all(pdus, "pdu")
-        name_all(pahus, "pahu")
-        name_all(chillers, "chiller")
-
         self.parts = [pdus, pahus, chillers]
 
         reduce_lr = tf.keras.callbacks.LearningRateScheduler(schedule=System.lrschedule, verbose=True)
 
-        BATCH_SIZE = 64
-        BUFFER_SIZE = 64
-
         for part in pdus + pahus + chillers:
+            print ("Training ", part.name)
             part.model = self.create_timeseries_model(part.input_params, part.output_params)
             part_X, part_y, x_val, y_val = self.get_timeseries_data(part.input_params, part.output_params)
 
             train_data_multi = tf.data.Dataset.from_tensor_slices((part_X, part_y))
-            train_data_multi = train_data_multi.cache().shuffle(BUFFER_SIZE).batch(BATCH_SIZE).repeat()
+            train_data_multi = train_data_multi.cache().shuffle(self.BUFFER_SIZE).batch(self.BATCH_SIZE).repeat()
 
             val_data_multi = tf.data.Dataset.from_tensor_slices((x_val, y_val))
-            val_data_multi = val_data_multi.batch(BATCH_SIZE).repeat()
+            val_data_multi = val_data_multi.batch(self.BATCH_SIZE).repeat()
 
             part.model.fit(train_data_multi, epochs=self.epochs,
                                                   steps_per_epoch=self.steps_per_epoch,
