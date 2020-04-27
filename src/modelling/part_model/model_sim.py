@@ -5,27 +5,26 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-def run_model_simulation(sensor_csv_file, model_dir, debug):
-    chiller = load_part(configs.chiller)
-    pahu = load_part(configs.pahu)
-    data_hall = load_part(configs.data_hall)
+class System:
+    def __init__(self):
+        self.history = None
+        self.sensor_names = []
+        self.parts = []
 
-    oah = None
-    oat = None
-    datetime = None
+    def set_state(self, state):
 
-    data_hall.set_state(data, datetime)
-    pahu.set_state(data, datetime)
-    chiller.set_state(data, datetime)
+    def get_state(self, size=20):
 
-    for i in range(1000):
-        supply_air, return_water = pahu.next()
-        data_hall_state, return_air = data_hall.next()
-        supply_water = chiller.next()
+    def step(self):
+        slice = self.get_state(size=20)
+        output = []
+        output_names = []
+        for part in self.parts:
+            predictions = part.predict(slice)
+            output.extend(predictions)
+            output_names.extend(part.output_names)
 
-        chiller.set_var(return_water)
-        pahu.set_var(supply_water, return_air)
-        data_hall.set_var(supply_air)
+
 
 
 if __name__ == "__main__":

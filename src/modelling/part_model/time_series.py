@@ -13,7 +13,6 @@ rng_state = random.getstate()
 cache = {}
 
 
-
 def multivariate_data(dataset, target, split_ratio, history_size,
                       target_size, step, train=True, single_step=False):
     """
@@ -78,7 +77,7 @@ def _iter():
         yield i
 
 def train_all(sensor_csv_file, model_dir):
-    for z,s,p in _iter():
+    for z, s, p in _iter():
         model = train(sensor_csv_file, z, s, p)
         tf.keras.models.save_model(model, Path(model_dir) / "data_hall_ts_Z{z}S{s}P{p}.hdf5".format(z=z,s=s,p=p))
 
