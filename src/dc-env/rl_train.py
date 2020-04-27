@@ -40,22 +40,23 @@ dqn = DQNAgent(model=model, nb_actions=nb_actions, memory=memory, nb_steps_warmu
                target_model_update=1e-2, policy=policy)
 dqn.compile(Adam(lr=1e-3), metrics=['mae'])
 
-weights_name = 'dqn_weights.h5f'
+weights_name = 'dqn_initial_weights.h5f'
 intermediate_weights = 'dqn_{step}_weights.h5f'
 
 from rl.callbacks import ModelIntervalCheckpoint
 
-test = False
-train = True
+test = True
+train = False
 
 if train:
     # dqn.load_weights(intermediate_weights.format(step=10000))
     save_weights = ModelIntervalCheckpoint(intermediate_weights, 10000, verbose=0)
     callbacks = [save_weights]
 
-    dqn.fit(env, nb_steps=50000, visualize=False, verbose=2)
+    # dqn.fit(env, nb_steps=50000, visualize=False, verbose=2)
     dqn.save_weights(weights_name, overwrite=True)
 
 if test:
-    dqn.load_weights(intermediate_weights.format(step=20000))
+    #dqn.load_weights(intermediate_weights.format(step=20000))
+    dqn.load_weights(weights_name)
     dqn.test(env, nb_episodes=5, visualize=False)

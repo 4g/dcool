@@ -7,6 +7,8 @@ from pathlib import Path
 import tensorflow as tf
 import random
 import numpy as np
+import json
+from tqdm import tqdm
 
 class Part:
     def __init__(self):
@@ -14,13 +16,21 @@ class Part:
         self.output_params = []
         self.model = None
         self.name = None
+        self.type = None
+        self.model_path = None
 
     def __str__(self):
         return self.__repr__()
 
-    def __repr__(self):
-        s = f"IN:{self.input_params}\nOUT:{self.output_params}"
+    def to_json(self):
+        s = {"IN": self.input_params,
+             "OUT": self.output_params,
+             "name": self.name,
+             "path": str(self.model_path)}
         return s
+
+    def __repr__(self):
+        return json.dumps(self.to_json())
 
 class System:
     def __init__(self, datafile, outdir):
@@ -69,11 +79,6 @@ class System:
 
         return np.array(data), np.array(labels)
 
-    def set_state(self, state):
-        pass
-
-    def get_state(self, size=20):
-        pass
 
     def get_chillers(self):
         chillers = []
@@ -102,6 +107,8 @@ class System:
             part.input_params = input_params
             part.output_params = output_params
             part.name = f"chiller_{c}"
+            part.type = "CHILLER"
+            part.model_path = self.outdir / (part.name + ".hdf5")
             chillers.append(part)
 
         return chillers
@@ -135,6 +142,8 @@ class System:
             part.input_params = input_params
             part.output_params = output_params
             part.name = f"pahu_Z{z}_N{n}"
+            part.type = "PAHU"
+            part.model_path = self.outdir / (part.name + ".hdf5")
             pahus.append(part)
 
         return pahus
@@ -152,6 +161,7 @@ class System:
         for z, s, p in _iter():
             dh_h = ['HUMIDITY_SENSOR/Z{z}S{s}_PDU_HUMI_{p}'.format(z=z, s=s, p=p)]
             dh_t = ['TEMP_SENSOR/Z{z}S{s}_PDU_TEMP_{p}'.format(z=z, s=s, p=p)]
+            # dh_power = ['PDU/Z{z}S{s} PDU {p}/TOTAL_POWER'.format(z=s, s=s,p=p)]
 
             pa_t = ['SF/Z{z} PAHU {n}/SUP_TEMP'.format(z=z, n=n) for n in range(1, 9)]
             pa_f = ['SF/Z{z} PAHU {n}/FAN_SPEED'.format(z=z, n=n) for n in range(1, 9)]
@@ -169,6 +179,8 @@ class System:
             part.input_params = input_params
             part.output_params = output_params
             part.name = f"pdu_Z{z}_S{s}_P{p}"
+            part.type = "PDU"
+            part.model_path = self.outdir / (part.name + ".hdf5")
             pdus.append(part)
 
         return pdus
@@ -176,13 +188,14 @@ class System:
     def create_timeseries_model(self, input_params, output_params):
         input_shape = (self.past_size, len(input_params))
         output_shape = len(output_params)
+
         multi_step_model = tf.keras.models.Sequential()
         multi_step_model.add(tf.keras.layers.LSTM(32,
                                                   return_sequences=True,
                                                   input_shape=input_shape))
 
-        multi_step_model.add(tf.keras.layers.LSTM(16, return_sequences=True, activation='relu'))
-        multi_step_model.add(tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(output_shape, activation='relu')))
+        multi_step_model.add(tf.keras.layers.LSTM(16, return_sequences=False, activation='relu'))
+        multi_step_model.add(tf.keras.layers.Dense(output_shape, activation='relu'))
 
         multi_step_model.compile(optimizer=tf.keras.optimizers.RMSprop(clipvalue=1.0), loss='mae')
         return multi_step_model
@@ -195,7 +208,7 @@ class System:
         do = do.values
 
         past_history = self.past_size
-        future_target = 20
+        future_target = 1
         STEP = 1
         TRAIN_SPLIT = 0.8
 
@@ -236,18 +249,25 @@ class System:
             lr = 0.00001
         return lr
 
+    def create_DC_json(self):
+        dc_dict = {}
+        for part in self.parts:
+            dc_dict[part.name] = part.to_json()
+
+        json.dump(dc_dict, open(self.outdir/'dc.json', 'w'), indent=True)
+
     def setup(self):
         self.setup_data()
-
         pdus = self.get_pdus()
         pahus = self.get_pahus()
         chillers = self.get_chillers()
+        self.parts = pdus + pahus + chillers
+        self.create_DC_json()
 
-        self.parts = [pdus, pahus, chillers]
-
+    def train(self):
         reduce_lr = tf.keras.callbacks.LearningRateScheduler(schedule=System.lrschedule, verbose=True)
 
-        for part in pdus + pahus + chillers:
+        for part in self.parts:
             print ("Training ", part.name)
             part.model = self.create_timeseries_model(part.input_params, part.output_params)
             part_X, part_y, x_val, y_val = self.get_timeseries_data(part.input_params, part.output_params)
@@ -258,23 +278,33 @@ class System:
             val_data_multi = tf.data.Dataset.from_tensor_slices((x_val, y_val))
             val_data_multi = val_data_multi.batch(self.BATCH_SIZE).repeat()
 
+            print (part.model.summary())
+
             part.model.fit(train_data_multi, epochs=self.epochs,
                                                   steps_per_epoch=self.steps_per_epoch,
                                                   validation_data=val_data_multi,
                                                   validation_steps=self.steps_per_epoch//5,
                                                   callbacks=[reduce_lr])
 
-            opath = self.outdir / (part.name + ".hdf5")
-            tf.keras.models.save_model(part.model, opath)
 
-    def step(self):
-        slice = self.get_state(size=20)
-        output = []
-        output_names = []
-        for part in self.parts:
-            predictions = part.predict(slice)
-            output.extend(predictions)
-            output_names.extend(part.output_names)
+            tf.keras.models.save_model(part.model, part.model_path)
+
+    def load(self):
+        for part in tqdm(self.parts, desc="Loading models ... "):
+            part.model = tf.keras.models.load_model(part.model_path)
+
+    def run(self, steps=100):
+        slice = self.history.head(self.past_size)
+        next_slice = slice.copy(deep=True)
+        for step in tqdm(range(steps), desc="STEPPING..."):
+            for part in self.parts:
+                part_slice = slice[part.input_params]
+                part_slice = np.expand_dims(part_slice, axis=0)
+                res = part.model.predict(part_slice)
+                next_slice[part.output_params] = res
+            print (next_slice[['TEMP_SENSOR/Z1S1_PDU_TEMP_1']])
+            slice = next_slice
+
 
 if __name__ == "__main__":
     import argparse
@@ -284,4 +314,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     system = System(args.infile, args.output)
+
     system.setup()
+    system.train()
+    system.load()
+    system.run()
