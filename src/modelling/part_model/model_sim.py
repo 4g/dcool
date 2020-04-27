@@ -80,8 +80,8 @@ class System:
         for c in [1, 2]:
             ch_t = ['CH_{c}_SUPPLY'.format(c=c)]
             ch_r = ['CH_{c}_RETURN'.format(c=c)]
-            oat = 'oat1',
-            oah = 'oah'
+            oat = ['oat1']
+            oah = ['oah']
             pa_t, pa_fs, pa_st = [], [], []
 
             for z in [1, 2]:
@@ -150,7 +150,7 @@ class System:
 
             flatten = lambda l: list([item for sublist in l for item in sublist])
 
-            input_params = [dh_t, dh_h, pa_t, pa_f]
+            input_params = [dh_t, pa_t, pa_f]
             output_params = [dh_t]
 
             input_params = flatten(input_params)
