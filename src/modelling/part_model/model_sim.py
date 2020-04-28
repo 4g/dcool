@@ -291,11 +291,10 @@ class System:
         for part in tqdm(self.parts, desc="Loading models ... "):
             part.model = tf.keras.models.load_model(part.model_path)
 
-    def run1(self, steps=100):
+    def run(self, steps=20):
         slice = self.history.head(self.past_size)
         next_slice = slice.copy(deep=True)
         print(next_slice[['TEMP_SENSOR/Z1S1_PDU_TEMP_1']])
-
 
         for step in tqdm(range(steps), desc="STEPPING..."):
             #print(slice[self.pahus[0].input_params])
@@ -319,23 +318,23 @@ class System:
                                  'TEMP_SENSOR/Z1S1_PDU_TEMP_2']].tail(steps))
         plt.show()
 
-    def run(self, steps=100):
-        part = self.parts[0]
-        real_output = self.history[part.output_params]
-        predicted_output = real_output.head(self.past_size).copy(deep=True)
-        for step in tqdm(range(steps), desc="STEPPING..."):
-            slice = self.history[part.input_params]
-            part_slice = slice[part.input_params]
-            part_slice = np.expand_dims(part_slice, axis=0)
-            res = part.model.predict(part_slice)
-            slice = predicted_output.append(next_slice.head(1), ignore_index=True)
-
-        sns.lineplot(data=slice[['SF/Z1 PAHU 1/FAN_SPEED',
-                                 'SF/Z1 PAHU 2/FAN_SPEED',
-                                 'SF/Z1 PAHU 3/FAN_SPEED',
-                                 'TEMP_SENSOR/Z1S1_PDU_TEMP_1',
-                                 'TEMP_SENSOR/Z1S1_PDU_TEMP_2']].tail(steps))
-        plt.show()
+    # def run(self, steps=100):
+    #     part = self.parts[0]
+    #     real_output = self.history[part.output_params]
+    #     predicted_output = real_output.head(self.past_size).copy(deep=True)
+    #     for step in tqdm(range(steps), desc="STEPPING..."):
+    #         slice = self.history[part.input_params]
+    #         part_slice = slice[part.input_params]
+    #         part_slice = np.expand_dims(part_slice, axis=0)
+    #         res = part.model.predict(part_slice)
+    #         slice = predicted_output.append(next_slice.head(1), ignore_index=True)
+    #
+    #     sns.lineplot(data=slice[['SF/Z1 PAHU 1/FAN_SPEED',
+    #                              'SF/Z1 PAHU 2/FAN_SPEED',
+    #                              'SF/Z1 PAHU 3/FAN_SPEED',
+    #                              'TEMP_SENSOR/Z1S1_PDU_TEMP_1',
+    #                              'TEMP_SENSOR/Z1S1_PDU_TEMP_2']].tail(steps))
+    #     plt.show()
 
 
 if __name__ == "__main__":

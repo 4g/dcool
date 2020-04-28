@@ -57,6 +57,6 @@ if train:
     dqn.save_weights(weights_name, overwrite=True)
 
 if test:
-    #dqn.load_weights(intermediate_weights.format(step=20000))
-    dqn.load_weights(weights_name)
+    dqn.load_weights(intermediate_weights.format(step=20000))
+    # dqn.load_weights(weights_name)
     dqn.test(env, nb_episodes=5, visualize=False)
