@@ -38,10 +38,10 @@ class System:
         self.history = None
         self.sensor_names = []
         self.parts = []
-        self.epochs = 1
+        self.epochs = 5
         self.past_size = 20
         self.rng_state = random.getstate()
-        self.steps_per_epoch = 1000
+        self.steps_per_epoch = 1200
         self.outdir = Path(outdir)
         self.BATCH_SIZE = 64
         self.BUFFER_SIZE = 64
@@ -258,10 +258,10 @@ class System:
 
     def setup(self):
         self.setup_data()
-        pdus = self.get_pdus()
-        pahus = self.get_pahus()
-        chillers = self.get_chillers()
-        self.parts = pdus + pahus + chillers
+        self.pdus = self.get_pdus()
+        self.pahus = self.get_pahus()
+        self.chillers = self.get_chillers()
+        self.parts = self.pdus + self.pahus + self.chillers
         self.create_DC_json()
 
     def train(self):
@@ -278,8 +278,6 @@ class System:
             val_data_multi = tf.data.Dataset.from_tensor_slices((x_val, y_val))
             val_data_multi = val_data_multi.batch(self.BATCH_SIZE).repeat()
 
-            print (part.model.summary())
-
             part.model.fit(train_data_multi, epochs=self.epochs,
                                                   steps_per_epoch=self.steps_per_epoch,
                                                   validation_data=val_data_multi,
@@ -293,17 +291,51 @@ class System:
         for part in tqdm(self.parts, desc="Loading models ... "):
             part.model = tf.keras.models.load_model(part.model_path)
 
-    def run(self, steps=100):
+    def run1(self, steps=100):
         slice = self.history.head(self.past_size)
         next_slice = slice.copy(deep=True)
+        print(next_slice[['TEMP_SENSOR/Z1S1_PDU_TEMP_1']])
+
+
         for step in tqdm(range(steps), desc="STEPPING..."):
+            #print(slice[self.pahus[0].input_params])
             for part in self.parts:
-                part_slice = slice[part.input_params]
+                part_slice = slice[part.input_params].tail(self.past_size)
                 part_slice = np.expand_dims(part_slice, axis=0)
                 res = part.model.predict(part_slice)
+                # print (res.shape, res)
                 next_slice[part.output_params] = res
-            print (next_slice[['TEMP_SENSOR/Z1S1_PDU_TEMP_1']])
-            slice = next_slice
+
+            # print(next_slice[self.pahus[0].input_params])
+            slice = slice.append(next_slice.head(1), ignore_index=True)
+            # slice = slice.tail(self.past_size)
+            # slice.style.hide_index()
+            # print(slice[self.pahus[0].input_params])
+
+        sns.lineplot(data=slice[['SF/Z1 PAHU 1/FAN_SPEED',
+                                 'SF/Z1 PAHU 2/FAN_SPEED',
+                                 'SF/Z1 PAHU 3/FAN_SPEED',
+                                 'TEMP_SENSOR/Z1S1_PDU_TEMP_1',
+                                 'TEMP_SENSOR/Z1S1_PDU_TEMP_2']].tail(steps))
+        plt.show()
+
+    def run(self, steps=100):
+        part = self.parts[0]
+        real_output = self.history[part.output_params]
+        predicted_output = real_output.head(self.past_size).copy(deep=True)
+        for step in tqdm(range(steps), desc="STEPPING..."):
+            slice = self.history[part.input_params]
+            part_slice = slice[part.input_params]
+            part_slice = np.expand_dims(part_slice, axis=0)
+            res = part.model.predict(part_slice)
+            slice = predicted_output.append(next_slice.head(1), ignore_index=True)
+
+        sns.lineplot(data=slice[['SF/Z1 PAHU 1/FAN_SPEED',
+                                 'SF/Z1 PAHU 2/FAN_SPEED',
+                                 'SF/Z1 PAHU 3/FAN_SPEED',
+                                 'TEMP_SENSOR/Z1S1_PDU_TEMP_1',
+                                 'TEMP_SENSOR/Z1S1_PDU_TEMP_2']].tail(steps))
+        plt.show()
 
 
 if __name__ == "__main__":
@@ -316,6 +348,6 @@ if __name__ == "__main__":
     system = System(args.infile, args.output)
 
     system.setup()
-    system.train()
+    # system.train()
     system.load()
     system.run()
