@@ -3,116 +3,164 @@
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta charset="utf-8" />
-        <title>Chart.js demo</title>
+        <title>TherML DC dashboard</title>
+        <script src='https://code.jquery.com/jquery-3.5.0.min.js'></script>
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
-        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
 
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css">
+        <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js"></script>
+
 
         <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js'></script>
-        <script src='https://code.jquery.com/jquery-3.5.0.min.js'></script>
 
     </head>
     <body>
-    <div class="container" id="chart_container">
-        <div class="row py-1">
-            <div class="col-md-4 py-1">
-                <div class="card">
-                    <div class="card-body">
-                        <canvas id="ch1"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 py-1">
-                <div class="card">
-                    <div class="card-body">
-                        <canvas id="ch2"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 py-1">
-                <div class="card">
-                    <div class="card-body">
-                        <canvas id="ch9"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 py-1">
-                <div class="card">
-                    <div class="card-body">
-                        <canvas id="ch10"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="row py-2">
-            <div class="col-md-4 py-1">
-                <div class="card">
-                    <div class="card-body">
-                        <canvas id="ch3"></canvas>
+    <nav class="navbar navbar-light bg-light">
+      <a class="navbar-brand" href="#">
+        <img src="logo.png" width="50" height="50" alt=""> TherML
+      </a>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-1 col-md-6 col-lg-3 p-3">
+                <table id="example" class="table table-striped table-bordered"  cellspacing="0" style="width:50%">
+                    <thead>
+                    <tr>
+                        <th>Sensor</th>
+                        <th>Value</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>PAHU_POWER_3</td>
+                        <td>34.1</td>
+                    </tr>
+                    </tbody>
+                    <tfoot>
+                    <tr>
+                        <th>Sensor</th>
+                        <th>Value</th>
+                    </tr>
+                    </tfoot>
+                </table>
+
+            </div>
+            <div class="col-sm-9 col-md-6 col-lg-9">
+                <div class="row ">
+                    <div class="col-md-4 ">
+                        <div class="card">
+                            <div class="card-body p-1 m-1">
+                                <canvas id="ch1"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 ">
+                        <div class="card">
+                            <div class="card-body p-1 m-1">
+                                <canvas id="ch2"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 ">
+                        <div class="card">
+                            <div class="card-body p-1 m-1">
+                                <canvas id="ch3"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 ">
+                        <div class="card">
+                            <div class="card-body p-1 m-1">
+                                <canvas id="ch4"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 ">
+                        <div class="card">
+                            <div class="card-body p-1 m-1">
+                                <canvas id="ch5"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 ">
+                        <div class="card">
+                            <div class="card-body p-1 m-1">
+                                <canvas id="ch6"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 ">
+                        <div class="card">
+                            <div class="card-body p-1 m-1">
+                                <canvas id="ch7"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 ">
+                        <div class="card">
+                            <div class="card-body p-1 m-1">
+                                <canvas id="ch8"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 ">
+                        <div class="card">
+                            <div class="card-body p-1 m-1">
+                                <canvas id="ch9"></canvas>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4 py-1">
-                <div class="card">
-                    <div class="card-body">
-                        <canvas id="ch4"></canvas>
+
+            <div class="row">
+                <div class="col-sm">
+                </div>
+                <div class="col-sm">
+                  <div class="btn-group" role="group" aria-label="Basic example">
+                      <button type="button" class="btn btn-secondary">Update</button>
+                      <button type="button" class="btn btn-secondary">Run</button>
+                      <button type="button" class="btn btn-secondary">Stop</button>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-4 py-1">
-                <div class="card">
-                    <div class="card-body">
-                        <canvas id="ch5"></canvas>
-                    </div>
+                <div class="col-sm">
                 </div>
-            </div>
-        </div>
-            <div class="row py-3">
-            <div class="col-md-4 py-1">
-                <div class="card">
-                    <div class="card-body">
-                        <canvas id="ch6"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 py-1">
-                <div class="card">
-                    <div class="card-body">
-                        <canvas id="ch7"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 py-1">
-                <div class="card">
-                    <div class="card-body">
-                        <canvas id="ch8"></canvas>
-                    </div>
-                </div>
-            </div>
+              </div>
+
         </div>
     </div>
 
 <script>
-    # Write a function which adds containers
-    # according to header recieved from backend
+    // Write a function which adds containers
+    // according to header received from backend
 
-<!--    C_NCOLS = 4-->
-<!--    for (i = 0; i < C_NCOLS; i++){-->
-<!--        $('#chart_container').append('<div id="innerdiv" class="row py-2"></div>');-->
-<!--        for (j = 0; j < C_NROWS; j++){-->
-<!--            $(document).ready(function() {-->
+<!--    addCanvases = function(colnames){-->
+<!--        C_NCOLS = 4;-->
+<!--        C_NROWS = colnames.length / C_NCOLS;-->
+<!--        for (i = 0; i < C_NCOLS; i++){-->
+<!--            $('#chart_container').append('<div id="innerdiv" class="row py-2"></div>');-->
+<!--            for (j = 0; j < C_NROWS; j++){-->
 
-
-<!--            });-->
 <!--            }-->
-
+<!--        }-->
 <!--    }-->
 
+<!--    $(document).ready(function() {-->
+<!--        $.get("../tsinit", function(colnames, status){-->
+<!--                console.log(colnames)-->
+<!--        });-->
+<!--    });-->
 
-    canvases = ["ch1", "ch2", "ch3", "ch4", "ch5", "ch6", "ch7", "ch8", "ch9", "ch10"]
+    $(document).ready(function() {
+        $('#example').DataTable();
+    } );
+
+    canvases = ["ch1", "ch2", "ch3", "ch4", "ch5", "ch6", "ch7", "ch8", "ch9"]
     charts = []
     for(can of canvases){
         var ctx = document.getElementById(can).getContext('2d');
@@ -122,12 +170,20 @@
             data: {
                 labels: [],
                 datasets: [{
-                    label: 'c1',
+                    label: can,
                     data: [],
                     borderWidth: 1
                 }]
             },
             options: {
+                layout: {
+                    padding: {
+                        left: 0,
+                        right: 0,
+                        top: 0,
+                        bottom: 0
+                    }
+                 },
                 scales: {
                     yAxes: [{
                         ticks: {
@@ -145,16 +201,21 @@
                 $.get("../ts", function(dict, status){
                     for(can of canvases){
                         cha = charts[can]
-
-
+                        if (cha.data.labels.length > 20) {
+                            cha.data.labels.shift();
+                        }
                         cha.data.labels.push("");
                         cha.data.datasets.forEach((dataset) => {
+                            if (dataset.data.length > 20) {
+                                dataset.data.shift();
+                            }
                             dataset.data.push(dict[can]);
+
                         });
                         cha.update();
                     }
                 })
-            }, 200)
+            }, 300)
 
     console.log(charts)
 

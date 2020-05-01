@@ -2,6 +2,8 @@ from flask import Flask
 from gevent.pywsgi import WSGIServer
 from random import randint
 import pandas as pd
+from flask import Response
+import json
 
 app = Flask(__name__)
 
@@ -13,6 +15,7 @@ class DFTimeSeriesGen:
 
     def next(self):
         row = self.data[self.index]
+        self.index += 1
         return self.row_as_dict(row)
 
     def row_as_dict(self, row):
@@ -26,17 +29,17 @@ class TimeSeriesGen:
         self.index = 0
         self.value = 0
         self.num_cols = num_cols
-        self.cols = ["sensor_" + str(i) for i in range(self.num_cols)]
+        self.cols = ["ch" + str(i) for i in range(1, self.num_cols + 1)]
         
     def header(self):
-        return dict(self.cols)
+        return self.cols
     
     def next(self):
         self.index += 1
         self.value = randint(18, 25)
-        return {col: randint(18, 25) for col in self.cols}
+        return {col: randint(0, 15) for col in self.cols}
 
-tsgen = TimeSeriesGen(10)
+tsgen = TimeSeriesGen(9)
 
 @app.route('/')
 def hello_world():
@@ -48,8 +51,10 @@ def chart():
 
 
 @app.route('/tsinit')
-def chart():
-    return tsgen.header()
+def header():
+    header = tsgen.header()
+    initinfo = {"header": header}
+    return json.dumps(initinfo)
 
 http_server = WSGIServer(('', 5000), app)
 http_server.serve_forever()
