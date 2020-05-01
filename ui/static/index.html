@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8" />
+        <title>Chart.js demo</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
+
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js'></script>
+        <script src='https://code.jquery.com/jquery-3.5.0.min.js'></script>
+
+    </head>
+    <body>
+    <div class="container" id="chart_container">
+        <div class="row py-1">
+            <div class="col-md-4 py-1">
+                <div class="card">
+                    <div class="card-body">
+                        <canvas id="ch1"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 py-1">
+                <div class="card">
+                    <div class="card-body">
+                        <canvas id="ch2"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 py-1">
+                <div class="card">
+                    <div class="card-body">
+                        <canvas id="ch9"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 py-1">
+                <div class="card">
+                    <div class="card-body">
+                        <canvas id="ch10"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row py-2">
+            <div class="col-md-4 py-1">
+                <div class="card">
+                    <div class="card-body">
+                        <canvas id="ch3"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 py-1">
+                <div class="card">
+                    <div class="card-body">
+                        <canvas id="ch4"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 py-1">
+                <div class="card">
+                    <div class="card-body">
+                        <canvas id="ch5"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+            <div class="row py-3">
+            <div class="col-md-4 py-1">
+                <div class="card">
+                    <div class="card-body">
+                        <canvas id="ch6"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 py-1">
+                <div class="card">
+                    <div class="card-body">
+                        <canvas id="ch7"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 py-1">
+                <div class="card">
+                    <div class="card-body">
+                        <canvas id="ch8"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    # Write a function which adds containers
+    # according to header recieved from backend
+
+<!--    C_NCOLS = 4-->
+<!--    for (i = 0; i < C_NCOLS; i++){-->
+<!--        $('#chart_container').append('<div id="innerdiv" class="row py-2"></div>');-->
+<!--        for (j = 0; j < C_NROWS; j++){-->
+<!--            $(document).ready(function() {-->
+
+
+<!--            });-->
+<!--            }-->
+
+<!--    }-->
+
+
+    canvases = ["ch1", "ch2", "ch3", "ch4", "ch5", "ch6", "ch7", "ch8", "ch9", "ch10"]
+    charts = []
+    for(can of canvases){
+        var ctx = document.getElementById(can).getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            responsive: true,
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'c1',
+                    data: [],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                }
+            },
+        });
+        charts[can] = myChart;
+    }
+
+        setInterval(
+            function addData() {
+                $.get("../ts", function(dict, status){
+                    for(can of canvases){
+                        cha = charts[can]
+
+
+                        cha.data.labels.push("");
+                        cha.data.datasets.forEach((dataset) => {
+                            dataset.data.push(dict[can]);
+                        });
+                        cha.update();
+                    }
+                })
+            }, 200)
+
+    console.log(charts)
+
+
+
+
+</script>
+    </body>
+</html>
