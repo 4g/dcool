@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=.75">
         <meta charset="utf-8" />
         <title>TherML DC dashboard</title>
         <script src='https://code.jquery.com/jquery-3.5.0.min.js'></script>
@@ -9,9 +9,10 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
 
-        <link rel="stylesheet" href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css">
         <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
-        <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4/dt-1.10.20/sl-1.3.1/datatables.min.css"/>
+        <script type="text/javascript" src="https://cdn.datatables.net/v/bs4/dt-1.10.20/sl-1.3.1/datatables.min.js"></script>
+
 
 
         <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js'></script>
@@ -19,118 +20,41 @@
     </head>
     <body>
 
-    <nav class="navbar navbar-light bg-light">
+    <nav class="navbar navbar-dark text-white bg-dark">
       <a class="navbar-brand" href="#">
         <img src="logo.png" width="50" height="50" alt=""> TherML
       </a>
+                <div class="btn-group" role="group" aria-label="Basic example">
+                    <button type="button" class="btn btn-secondary">Update</button>
+                    <button type="button" class="btn btn-secondary">Run</button>
+                    <button type="button" class="btn btn-secondary">Stop</button>
+                </div>
+
+
     </nav>
 
-    <div class="container-fluid">
+    <div class="container-fluid small">
         <div class="row">
-            <div class="col-sm-1 col-md-6 col-lg-3 p-3">
-                <table id="example" class="table table-striped table-bordered"  cellspacing="0" style="width:50%">
+            <div class="col-sm-1 col-md-4 col-lg-2 p-3">
+                <table id="setpoint_table" class="table table-striped table-bordered small"  cellspacing="0" style="width:50%">
                     <thead>
                     <tr>
-                        <th>Sensor</th>
+                        <th>Setpoint</th>
                         <th>Value</th>
                     </tr>
                     </thead>
-                    <tbody>
-                    <tr>
-                        <td>PAHU_POWER_3</td>
-                        <td>34.1</td>
-                    </tr>
+                    <tbody id="sensor_table_body">
                     </tbody>
-                    <tfoot>
-                    <tr>
-                        <th>Sensor</th>
-                        <th>Value</th>
-                    </tr>
-                    </tfoot>
                 </table>
 
             </div>
+
+
             <div class="col-sm-9 col-md-6 col-lg-9">
-                <div class="row ">
-                    <div class="col-md-4 ">
-                        <div class="card">
-                            <div class="card-body p-1 m-1">
-                                <canvas id="ch1"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 ">
-                        <div class="card">
-                            <div class="card-body p-1 m-1">
-                                <canvas id="ch2"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 ">
-                        <div class="card">
-                            <div class="card-body p-1 m-1">
-                                <canvas id="ch3"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 ">
-                        <div class="card">
-                            <div class="card-body p-1 m-1">
-                                <canvas id="ch4"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 ">
-                        <div class="card">
-                            <div class="card-body p-1 m-1">
-                                <canvas id="ch5"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 ">
-                        <div class="card">
-                            <div class="card-body p-1 m-1">
-                                <canvas id="ch6"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 ">
-                        <div class="card">
-                            <div class="card-body p-1 m-1">
-                                <canvas id="ch7"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 ">
-                        <div class="card">
-                            <div class="card-body p-1 m-1">
-                                <canvas id="ch8"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 ">
-                        <div class="card">
-                            <div class="card-body p-1 m-1">
-                                <canvas id="ch9"></canvas>
-                            </div>
-                        </div>
-                    </div>
+                <div class="row" id="chart_container">
+
                 </div>
             </div>
-
-            <div class="row">
-                <div class="col-sm">
-                </div>
-                <div class="col-sm">
-                  <div class="btn-group" role="group" aria-label="Basic example">
-                      <button type="button" class="btn btn-secondary">Update</button>
-                      <button type="button" class="btn btn-secondary">Run</button>
-                      <button type="button" class="btn btn-secondary">Stop</button>
-                    </div>
-                </div>
-                <div class="col-sm">
-                </div>
-              </div>
 
         </div>
     </div>
@@ -139,86 +63,139 @@
     // Write a function which adds containers
     // according to header received from backend
 
-<!--    addCanvases = function(colnames){-->
-<!--        C_NCOLS = 4;-->
-<!--        C_NROWS = colnames.length / C_NCOLS;-->
-<!--        for (i = 0; i < C_NCOLS; i++){-->
-<!--            $('#chart_container').append('<div id="innerdiv" class="row py-2"></div>');-->
-<!--            for (j = 0; j < C_NROWS; j++){-->
-
-<!--            }-->
-<!--        }-->
-<!--    }-->
-
-<!--    $(document).ready(function() {-->
-<!--        $.get("../tsinit", function(colnames, status){-->
-<!--                console.log(colnames)-->
-<!--        });-->
-<!--    });-->
 
     $(document).ready(function() {
-        $('#example').DataTable();
-    } );
+        $.get("../tsinit", function(initinfo, status){
+                header = initinfo["header"]
+                editables = initinfo["editable"]
 
-    canvases = ["ch1", "ch2", "ch3", "ch4", "ch5", "ch6", "ch7", "ch8", "ch9"]
-    charts = []
-    for(can of canvases){
-        var ctx = document.getElementById(can).getContext('2d');
-        var myChart = new Chart(ctx, {
-            type: 'line',
-            responsive: true,
-            data: {
-                labels: [],
-                datasets: [{
-                    label: can,
-                    data: [],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                layout: {
-                    padding: {
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        bottom: 0
+                console.log()
+                addCanvases(header)
+                initCharts(header)
+                var setpoint_table = $('#setpoint_table').DataTable(
+                   {
+                       select: true,
+                       paging: false,
+                       scrollY: 400,
+                       "dom": '<"wrapper"flt>'
+
                     }
-                 },
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero: true
-                        }
-                    }]
-                }
-            },
+                );
+
+                $('#setpoint_table').on( 'click', 'tbody td', function () {
+                    setpoint_table.cell( this ).edit();
+                } );
+
+
+                addSetpoints(setpoint_table, editables)
         });
-        charts[can] = myChart;
+    });
+
+    addSetpoints = function(t, e){
+        for(h of e){
+            t.row.add([h,0.0]).draw( false );
+        }
     }
 
-        setInterval(
-            function addData() {
-                $.get("../ts", function(dict, status){
-                    for(can of canvases){
-                        cha = charts[can]
-                        if (cha.data.labels.length > 20) {
-                            cha.data.labels.shift();
-                        }
-                        cha.data.labels.push("");
-                        cha.data.datasets.forEach((dataset) => {
-                            if (dataset.data.length > 20) {
-                                dataset.data.shift();
+
+    addCanvases = function(colnames){
+        for (col of colnames){
+            $('#chart_container').append('<div class="col-md-3 p-2 m-0">\
+                                            <div class="card border-1">\
+                                                <div class="card-body p-0 m-0">\
+                                                    <canvas id="' + col +  '"></canvas>\
+                                                </div>\
+                                            </div>\
+                                        </div>');
+        }
+    }
+
+    initCharts = function (canvases){
+        Chart.defaults.global.elements.point.radius = 0;
+
+            charts = []
+            for(can of canvases){
+                var ctx = document.getElementById(can).getContext('2d');
+                var myChart = new Chart(ctx, {
+                    type: 'line',
+                    responsive: true,
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: can,
+                            data: [],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        legend: {
+                            labels:{fontSize : 10},
+                        },
+                        elements: {
+                            line: {
+                                fill: false,
+                                backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                                borderColor: 'rgba(0, 128, 128, 0.8)',
+                            },
+                        },
+                        animation: false,
+                        layout: {
+                            padding: {
+                                left: 0,
+                                right: 0,
+                                top: 0,
+                                bottom: 0
                             }
-                            dataset.data.push(dict[can]);
+                         },
+                        scales: {
+                            showLines:false,
+                            yAxes: [{
+                                 gridLines: {
+                                    display:false
+                                },
+                                ticks: {
+                                    beginAtZero: false,
+                                    display:false,
+                                }
+                            }],
+                            xAxes: [{
+                                 gridLines: {
+                                    display:false
+                                },
+                                ticks: {
+                                    min: 0,
+                                    max: 50
+                                }
+                            }]
 
-                        });
-                        cha.update();
-                    }
-                })
-            }, 300)
+                        }
+                    },
+                });
+                charts[can] = myChart;
+                console.log(myChart)
+            }
 
-    console.log(charts)
+            setInterval(
+                function addData() {
+                    $.get("../ts", function(dict, status){
+                        for(can in canvases){
+                            cha = charts[canvases[can]]
+                            if (cha.data.labels.length > 120) {
+                                cha.data.labels.shift();
+                            }
+                            cha.data.labels.push("");
+                            cha.data.datasets.forEach((dataset) => {
+                                if (dataset.data.length > 120) {
+                                    dataset.data.shift();
+                                }
+                                dataset.data.push(dict[can]);
 
+                            });
+                            cha.update();
+                        }
+                    })
+                }, 100)
+        }
 
 
 
