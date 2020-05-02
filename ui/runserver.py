@@ -33,7 +33,7 @@ class DFTimeSeriesGen:
         return dict(zip(self.columns, row))
 
     def header(self):
-        header = list(filter(lambda x: "power" in x.lower() and ("pdu" not in x.lower()), self.columns))
+        header = list(filter(lambda x: "evap" in x.lower() and ("pdu" not in x.lower()), self.columns))
         return header
 
     def modifiable(self):
