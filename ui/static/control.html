@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=.75">
+        <meta charset="utf-8" />
+        <title>therml DC dashboard</title>
+        <script src='https://code.jquery.com/jquery-3.5.0.min.js'></script>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
+        <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4/dt-1.10.20/sl-1.3.1/datatables.min.css"/>
+        <script type="text/javascript" src="https://cdn.datatables.net/v/bs4/dt-1.10.20/sl-1.3.1/datatables.min.js"></script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js'></script>
+    </head>
+    <body>
+
+    <nav class="navbar navbar-dark text-white bg-dark">
+      <a class="navbar-brand" href="#">
+          <img src="logo.png" width="50" height="50" alt=""> <b>therml</b>
+      </a>
+                <div class="btn-group" role="group" aria-label="Basic example">
+                    <button type="button" class="btn btn-secondary">Update</button>
+                    <button type="button" class="btn btn-secondary">Run</button>
+                    <button type="button" class="btn btn-secondary">Stop</button>
+                </div>
+    </nav>
+
+    <div class="container-fluid small">
+        <div class="row">
+            <div class="col-sm-1 col-md-4 col-lg-2 p-3">
+                <table id="setpoint_table" class="table table-striped table-bordered small"  cellspacing="0" style="width:50%">
+                    <thead>
+                    <tr>
+                        <th>Setpoint</th>
+                        <th>Value</th>
+                    </tr>
+                    </thead>
+                    <tbody id="sensor_table_body">
+                    </tbody>
+                </table>
+
+            </div>
+
+
+            <div class="col-sm-9 col-md-6 col-lg-9">
+                <div class="row" id="chart_container">
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+<script>
+    // Write a function which adds containers
+    // according to header received from backend
+
+    $(document).ready(function() {
+        $.get("../tsinit", function(initinfo, status){
+                header = initinfo["header"]
+                editables = initinfo["editable"]
+
+                console.log()
+                addCanvases(header)
+                initCharts(header)
+                var setpoint_table = $('#setpoint_table').DataTable(
+                   {
+                       select: true,
+                       paging: false,
+                       scrollY: 400,
+                       "dom": '<"wrapper"flt>'
+
+                    }
+                );
+
+                $('#setpoint_table').on( 'click', 'tbody td', function () {
+                    setpoint_table.cell( this ).edit();
+                } );
+
+                addSetpoints(setpoint_table, editables)
+        });
+    });
+
+    addSetpoints = function(t, e){
+        for(h of e){
+            t.row.add([h,0.0]).draw( false );
+        }
+    }
+
+    addCanvases = function(colnames){
+        for (col of colnames){
+            $('#chart_container').append('<div class="col-md-3 p-2 m-0">\
+                                            <div class="card border-1">\
+                                                <div class="card-body p-0 m-0">\
+                                                    <canvas id="' + col +  '"></canvas>\
+                                                </div>\
+                                            </div>\
+                                        </div>');
+        }
+    }
+
+    initCharts = function (canvases){
+        Chart.defaults.global.elements.point.radius = 0;
+
+            charts = []
+            for(can of canvases){
+                var ctx = document.getElementById(can).getContext('2d');
+                var myChart = new Chart(ctx, {
+                    type: 'line',
+                    responsive: true,
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: can,
+                            data: [],
+                            borderWidth: 0,
+                            borderColor: 'rgba(255, 0, 0, 0.8)',
+                        },
+                        {
+                            label: can + "2",
+                            data: [],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        legend: {
+                            labels:{fontSize : 10},
+                        },
+                        elements: {
+                            line: {
+                                fill: false,
+                                backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                                borderColor: 'rgba(0, 128, 128, 0.8)',
+                            },
+                        },
+                        animation: false,
+                        layout: {
+                            padding: {
+                                left: 0,
+                                right: 0,
+                                top: 0,
+                                bottom: 0
+                            }
+                         },
+                        scales: {
+                            showLines:false,
+                            yAxes: [{
+                                 gridLines: {
+                                    display:false
+                                },
+                                ticks: {
+                                    beginAtZero: false,
+                                    display:false,
+                                }
+                            }],
+                            xAxes: [{
+                                 gridLines: {
+                                    display:false
+                                },
+                                ticks: {
+                                    min: 0,
+                                    max: 50
+                                }
+                            }]
+
+                        }
+                    },
+                });
+                charts[can] = myChart;
+                console.log(myChart)
+            }
+
+            setInterval(
+                function addData() {
+                    $.get("../ts", function(dict, status){
+                        for(can in canvases){
+                            cha = charts[canvases[can]]
+                            if (cha.data.labels.length > 120) {
+                                cha.data.labels.shift();
+                            }
+                            cha.data.labels.push("");
+                            d1 = cha.data.datasets[0]
+                            d2 = cha.data.datasets[1]
+                            if (d1.data.length > 120) {
+                                d1.data.shift();
+                            }
+                            d1.data.push(dict[can]);
+
+                            if (d2.data.length > 20) {
+                                d2.data.shift();
+                            }
+                            d2.data.push(dict[can]);
+                            cha.update();
+                        }
+                    })
+                }, 100)
+        }
+</script>
+    </body>
+</html>

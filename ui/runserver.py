@@ -33,11 +33,13 @@ class DFTimeSeriesGen:
         return dict(zip(self.columns, row))
 
     def header(self):
-        header = list(filter(lambda x: "evap" in x.lower() and ("pdu" not in x.lower()), self.columns))
+        # header = list(filter(lambda x: "ems" in x.lower() and ("pdu" not in x.lower()), self.columns))
+        header = list(self.columns)
         return header
 
     def modifiable(self):
-        return list(filter(lambda x: "_sp" in x.lower()[-4:], self.columns))
+        # return list(filter(lambda x: "_sp" in x.lower()[-4:], self.columns))
+        return list(self.columns)
 
 
 class TimeSeriesGen:
@@ -58,13 +60,38 @@ class TimeSeriesGen:
         self.value = randint(18, 25)
         return [randint(0, 15) for col in self.cols]
 
+class ABTimeSeries:
+    def __init__(self, df_csv_path):
+        self.experiment = self.create_experiment(a, b)
+        self.index = 0
+        self.columns = self.data.columns.tolist()
+
+    def next(self):
+        row = self.data.iloc[self.index]
+        self.index = (self.index + 360) % len(self.data)
+        return list(row.values)
+
+    def row_as_dict(self, row):
+        return dict(zip(self.columns, row))
+
+    def header(self):
+        # header = list(filter(lambda x: "ems" in x.lower() and ("pdu" not in x.lower()), self.columns))
+        header = list(self.columns)
+        return header
+
+    def modifiable(self):
+        # return list(filter(lambda x: "_sp" in x.lower()[-4:], self.columns))
+        return list(self.columns)
+
 # tsgen = TimeSeriesGen(9)
-tsgen = DFTimeSeriesGen("../outputs/flipkart/flat_df.csv")
+# tsgen = DFTimeSeriesGen("../outputs/flipkart/flat_df.csv")
 # tsgen = DFTimeSeriesGen("../data/modelling/eplusout.csv")
+tsgen = DFTimeSeriesGen("../src/eplus_modelling/usual/eplusout.csv")
+
 
 @app.route('/')
-def hello_world():
-    return 'Hello, World!'
+def blank():
+    return ''
 
 @app.route('/ts')
 def chart():
