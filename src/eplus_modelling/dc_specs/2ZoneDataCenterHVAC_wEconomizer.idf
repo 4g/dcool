@@ -113,7 +113,7 @@
 
   Version,9.1;
 
-  Timestep,15;
+  Timestep,2;
 
   Building,
     Simple One Zone (Wireframe DXF),  !- Name
@@ -140,10 +140,10 @@
 
   RunPeriod,
     WinterSeasonDay,         !- Name
-    1,                       !- Begin Month
-    1,                      !- Begin Day of Month
+    12,                      !- Begin Month
+    1,                       !- Begin Day of Month
     ,                        !- Begin Year
-    12,                       !- End Month
+    12,                      !- End Month
     31,                      !- End Day of Month
     ,                        !- End Year
     Tuesday,                 !- Day of Week for Start Day
