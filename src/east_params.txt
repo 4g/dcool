@@ -1,0 +1,9 @@
+environment,Site Outdoor Air Drybulb Temperature
+westdatacenter_equip,ITE Fan Electric Power
+westdatacenter_equip,ITE Air Inlet Dry-Bulb Temperature
+westdatacenter_equip,ITE Air Outlet Dry-Bulb Temperature
+west zone,Zone ITE Fan Electric Power
+ems,Power Utilization Effectiveness
+west zone,Zone Air Temperature
+west data center iec,Evaporative Cooler Electric Power
+west data center dec,Evaporative Cooler Electric Power
