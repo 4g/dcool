@@ -7,6 +7,7 @@ class EplusModelDC:
         self.schedules = {}
         self.setpoints = {}
         self.schedule_index_map = {}
+        self.schedule_values = {}
         self.setup()
 
     def setup(self):
@@ -67,6 +68,7 @@ class EplusModelDC:
             if isinstance(value, str) and self.isvalue(value):
                 self.schedule_index_map[schedule.name] = self.schedule_index_map.get(schedule.name, [])
                 self.schedule_index_map[schedule.name].append(key)
+                self.schedule_values[schedule.name] = value
 
     def update_schedule(self, name, value):
         schedule_keys = self.schedule_index_map[name]
@@ -77,28 +79,24 @@ class EplusModelDC:
         return op.simulate(self.epm, self.weather, odir)
 
     def get_modifiables(self):
-        return list(self.schedule_index_map.keys())
+        return self.schedule_values
 
 class EplusExperiment:
     def __init__(self, name):
-        self.eplusmodel_a = EplusModelDC("eplus_modelling/dc_specs/2ZoneDataCenterHVAC_wEconomizer.idf", "eplus_modelling/dc_specs/IND_Bangalore.432950_ISHRAE.epw")
-        self.eplusmodel_b = EplusModelDC("eplus_modelling/dc_specs/2ZoneDataCenterHVAC_wEconomizer.idf", "eplus_modelling/dc_specs/IND_Bangalore.432950_ISHRAE.epw")
+        self.eplusmodel_a = EplusModelDC("eplus_modelling/dc_specs/2ZoneDataCenterHVAC_wEconomizer.idf",
+                                         "eplus_modelling/dc_specs/IND_Bangalore.432950_ISHRAE.epw")
         self.name = name
 
-    def set_ab(self, name, a, b):
+    def set_a(self, name, a):
         self.eplusmodel_a.update_schedule(name, a)
-        self.eplusmodel_b.update_schedule(name, b)
 
     def run(self):
         sim_a = self.eplusmodel_a.simulate(self.name + "_a")
-        sim_b = self.eplusmodel_b.simulate(self.name + "_b")
         a_eso = sim_a.get_out_eso().get_data()
-        b_eso = sim_b.get_out_eso().get_data()
-        return a_eso, b_eso
+        return a_eso
 
     def set_period(self, start, end):
         self.eplusmodel_a.set_period(start, end)
-        self.eplusmodel_b.set_period(start, end)
 
     def get_modifiables(self):
         return self.eplusmodel_a.get_modifiables()
@@ -106,9 +104,10 @@ class EplusExperiment:
 if __name__ == "__main__":
     eplusmodel = EplusExperiment("heating_cooling_setpoints")
     eplusmodel.set_period(start=(1, 6), end=(2, 6))
-    eplusmodel.set_ab("heating setpoints", str(15), str(20))
-    eplusmodel.set_ab("cooling setpoints",  str(18), str(35))
-    a,b = eplusmodel.run()
-    print(eplusmodel.eplusmodel_a.get_modifiables())
-    print (a)
-    print (b)
+    eplusmodel.set_a("heating setpoints", str(15))
+    eplusmodel.set_a("cooling setpoints", str(18))
+    a = eplusmodel.run()
+    import json
+    # print(json.dumps(eplusmodel.eplusmodel_a.get_modifiables()))
+    for col in a.columns:
+        print(col)

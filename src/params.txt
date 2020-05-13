@@ -1,0 +1,129 @@
+environment,Site Outdoor Air Drybulb Temperature
+eastdatacenter_equip,ITE CPU Electric Power
+eastdatacenter_equip,ITE Fan Electric Power
+eastdatacenter_equip,ITE UPS Electric Power
+eastdatacenter_equip,ITE CPU Electric Power at Design Inlet Conditions
+eastdatacenter_equip,ITE Fan Electric Power at Design Inlet Conditions
+eastdatacenter_equip,ITE UPS Heat Gain to Zone Rate
+eastdatacenter_equip,ITE Total Heat Gain to Zone Rate
+eastdatacenter_equip,ITE Standard Density Air Volume Flow Rate
+eastdatacenter_equip,ITE Air Inlet Dry-Bulb Temperature
+eastdatacenter_equip,ITE Air Inlet Dewpoint Temperature
+eastdatacenter_equip,ITE Air Inlet Relative Humidity
+eastdatacenter_equip,ITE Air Outlet Dry-Bulb Temperature
+eastdatacenter_equip,ITE Supply Heat Index
+eastdatacenter_equip,ITE Air Inlet Operating Range Exceeded Time
+eastdatacenter_equip,ITE Air Inlet Dry-Bulb Temperature Above Operating Range Time
+eastdatacenter_equip,ITE Air Inlet Dry-Bulb Temperature Below Operating Range Time
+eastdatacenter_equip,ITE Air Inlet Dewpoint Temperature Above Operating Range Time
+eastdatacenter_equip,ITE Air Inlet Dewpoint Temperature Below Operating Range Time
+eastdatacenter_equip,ITE Air Inlet Relative Humidity Above Operating Range Time
+eastdatacenter_equip,ITE Air Inlet Relative Humidity Below Operating Range Time
+eastdatacenter_equip,ITE Air Inlet Dry-Bulb Temperature Difference Above Operating Range
+eastdatacenter_equip,ITE Air Inlet Dry-Bulb Temperature Difference Below Operating Range
+eastdatacenter_equip,ITE Air Inlet Dewpoint Temperature Difference Above Operating Range
+eastdatacenter_equip,ITE Air Inlet Dewpoint Temperature Difference Below Operating Range
+eastdatacenter_equip,ITE Air Inlet Relative Humidity Difference Above Operating Range
+eastdatacenter_equip,ITE Air Inlet Relative Humidity Difference Below Operating Range
+east zone,Zone ITE CPU Electric Power
+east zone,Zone ITE Fan Electric Power
+east zone,Zone ITE UPS Electric Power
+east zone,Zone ITE CPU Electric Power at Design Inlet Conditions
+east zone,Zone ITE Fan Electric Power at Design Inlet Conditions
+east zone,Zone ITE UPS Heat Gain to Zone Rate
+east zone,Zone ITE Total Heat Gain to Zone Rate
+westdatacenter_equip,ITE CPU Electric Power
+westdatacenter_equip,ITE Fan Electric Power
+westdatacenter_equip,ITE UPS Electric Power
+westdatacenter_equip,ITE CPU Electric Power at Design Inlet Conditions
+westdatacenter_equip,ITE Fan Electric Power at Design Inlet Conditions
+westdatacenter_equip,ITE UPS Heat Gain to Zone Rate
+westdatacenter_equip,ITE Total Heat Gain to Zone Rate
+westdatacenter_equip,ITE Standard Density Air Volume Flow Rate
+westdatacenter_equip,ITE Air Inlet Dry-Bulb Temperature
+westdatacenter_equip,ITE Air Inlet Dewpoint Temperature
+westdatacenter_equip,ITE Air Inlet Relative Humidity
+westdatacenter_equip,ITE Air Outlet Dry-Bulb Temperature
+westdatacenter_equip,ITE Supply Heat Index
+westdatacenter_equip,ITE Air Inlet Operating Range Exceeded Time
+westdatacenter_equip,ITE Air Inlet Dry-Bulb Temperature Above Operating Range Time
+westdatacenter_equip,ITE Air Inlet Dry-Bulb Temperature Below Operating Range Time
+westdatacenter_equip,ITE Air Inlet Dewpoint Temperature Above Operating Range Time
+westdatacenter_equip,ITE Air Inlet Dewpoint Temperature Below Operating Range Time
+westdatacenter_equip,ITE Air Inlet Relative Humidity Above Operating Range Time
+westdatacenter_equip,ITE Air Inlet Relative Humidity Below Operating Range Time
+westdatacenter_equip,ITE Air Inlet Dry-Bulb Temperature Difference Above Operating Range
+westdatacenter_equip,ITE Air Inlet Dry-Bulb Temperature Difference Below Operating Range
+westdatacenter_equip,ITE Air Inlet Dewpoint Temperature Difference Above Operating Range
+westdatacenter_equip,ITE Air Inlet Dewpoint Temperature Difference Below Operating Range
+westdatacenter_equip,ITE Air Inlet Relative Humidity Difference Above Operating Range
+westdatacenter_equip,ITE Air Inlet Relative Humidity Difference Below Operating Range
+west zone,Zone ITE CPU Electric Power
+west zone,Zone ITE Fan Electric Power
+west zone,Zone ITE UPS Electric Power
+west zone,Zone ITE CPU Electric Power at Design Inlet Conditions
+west zone,Zone ITE Fan Electric Power at Design Inlet Conditions
+west zone,Zone ITE UPS Heat Gain to Zone Rate
+west zone,Zone ITE Total Heat Gain to Zone Rate
+ems,Power Utilization Effectiveness
+east zone,Zone Air Temperature
+east zone,Zone Air Relative Humidity
+west zone,Zone Air Temperature
+west zone,Zone Air Relative Humidity
+east zone cw cooling coil,Cooling Coil Total Cooling Rate
+east zone cw cooling coil,Cooling Coil Sensible Cooling Rate
+west zone cw cooling coil,Cooling Coil Total Cooling Rate
+west zone cw cooling coil,Cooling Coil Sensible Cooling Rate
+east data center iec,Evaporative Cooler Total Stage Effectiveness
+east data center iec,Evaporative Cooler Operating Mode Status
+west data center iec,Evaporative Cooler Total Stage Effectiveness
+west data center iec,Evaporative Cooler Operating Mode Status
+east data center dec,Evaporative Cooler Stage Effectiveness
+west data center dec,Evaporative Cooler Stage Effectiveness
+east data center iec,Evaporative Cooler Electric Power
+east data center iec,Evaporative Cooler Water Volume
+west data center iec,Evaporative Cooler Electric Power
+west data center iec,Evaporative Cooler Water Volume
+east data center dec,Evaporative Cooler Electric Power
+east data center dec,Evaporative Cooler Water Volume
+west data center dec,Evaporative Cooler Electric Power
+west data center dec,Evaporative Cooler Water Volume
+east dx cooling coil,Cooling Coil Total Cooling Rate
+east dx cooling coil,Cooling Coil Sensible Cooling Rate
+west dx cooling coil,Cooling Coil Total Cooling Rate
+west dx cooling coil,Cooling Coil Sensible Cooling Rate
+chiller,Chiller Evaporator Cooling Rate
+chiller,Chiller Evaporator Inlet Temperature
+chiller,Chiller Evaporator Outlet Temperature
+chiller,Chiller Condenser Heat Transfer Rate
+chiller,Chiller Condenser Inlet Temperature
+chiller,Chiller Condenser Outlet Temperature
+east zone dec outlet node,System Node Temperature
+east zone iec outlet node,System Node Temperature
+east zone ccoil air outlet node,System Node Temperature
+east air loop outlet node,System Node Temperature
+east zone inlet node,System Node Temperature
+east zone inlet node,System Node Mass Flow Rate
+east iec secondary air inlet node,System Node Temperature
+east iec secondary air inlet node,System Node Mass Flow Rate
+east outside air inlet node,System Node Temperature
+east outside air inlet node,System Node Mass Flow Rate
+west iec secondary air inlet node,System Node Temperature
+west iec secondary air inlet node,System Node Mass Flow Rate
+west outside air inlet node,System Node Temperature
+west outside air inlet node,System Node Mass Flow Rate
+west zone dec outlet node,System Node Temperature
+west zone iec outlet node,System Node Temperature
+west zone iec outlet node,System Node Setpoint Temperature
+west zone ccoil air outlet node,System Node Temperature
+west air loop outlet node,System Node Temperature
+west zone inlet node,System Node Temperature
+west zone inlet node,System Node Mass Flow Rate
+east zone supply fan outlet node,System Node Temperature
+west zone return air node,System Node Temperature
+west zone return air node,System Node Mass Flow Rate
+west zone mixed air node,System Node Temperature
+west zone mixed air node,System Node Mass Flow Rate
+west zone supply fan outlet node,System Node Temperature
+west iec secondary air outlet node,System Node Temperature
+west iec secondary air outlet node,System Node Mass Flow Rate

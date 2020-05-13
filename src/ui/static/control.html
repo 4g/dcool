@@ -9,10 +9,11 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
 
-        <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
-        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4/dt-1.10.20/sl-1.3.1/datatables.min.css"/>
-        <script type="text/javascript" src="https://cdn.datatables.net/v/bs4/dt-1.10.20/sl-1.3.1/datatables.min.js"></script>
+<!--        <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>-->
+<!--        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4/dt-1.10.20/sl-1.3.1/datatables.min.css"/>-->
+<!--        <script type="text/javascript" src="https://cdn.datatables.net/v/bs4/dt-1.10.20/sl-1.3.1/datatables.min.js"></script>-->
         <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js'></script>
+
     </head>
     <body>
 
@@ -20,11 +21,8 @@
       <a class="navbar-brand" href="#">
           <img src="logo.png" width="50" height="50" alt=""> <b>therml</b>
       </a>
-                <div class="btn-group" role="group" aria-label="Basic example">
-                    <button type="button" class="btn btn-secondary">Update</button>
-                    <button type="button" class="btn btn-secondary">Run</button>
-                    <button type="button" class="btn btn-secondary">Stop</button>
-                </div>
+        <button type="button" id="update_button">Update</button>
+
     </nav>
 
     <div class="container-fluid small">
@@ -33,9 +31,7 @@
                 <table id="setpoint_table" class="table table-striped table-bordered small"  cellspacing="0" style="width:50%">
                     <thead>
                     <tr>
-                        <th>Setpoint</th>
-                        <th>A value</th>
-                        <th>B value</th>
+                        <th>Exp value</th>
                     </tr>
                     </thead>
                     <tbody id="sensor_table_body">
@@ -43,7 +39,6 @@
                 </table>
 
             </div>
-
 
             <div class="col-sm-9 col-md-6 col-lg-9">
                 <div class="row" id="chart_container">
@@ -58,6 +53,10 @@
     // Write a function which adds containers
     // according to header received from backend
 
+    var editables;
+    var observables;
+    var charts;
+
     $(document).ready(function() {
         $.get("../tsinit", function(initinfo, status){
                 header = initinfo["header"]
@@ -68,21 +67,38 @@
 
                 var setpoint_table = $('#setpoint_table')
                 addSetpoints(setpoint_table, editables)
-                $.get("../experiment", function(initinfo, status){})
+                document.getElementById('update_button').onclick = startExperiment
                 initCharts(header)
         });
     });
 
+    testFunc = function(){
+        console.log('clocked')
+    }
+
+    startExperiment = function(){
+        setpointvalues = {}
+        for (const [h, value] of Object.entries(editables)) {
+            idd = h;
+            setpointvalues[h] = document.getElementById(idd).value
+        }
+        console.log(setpointvalues)
+        $.get("../run_experiment", setpointvalues, function(initinfo, status){
+            updateCharts();
+        })
+    }
+
     addSetpoints = function(t, e){
-        for(h of e){
-            t.append('<tr><td>' + h +'</td><td><input class="input col-sm-1" type="text" id="t" name="fname"></td>\
-            <td><input class="input col-sm-1" type="text" id="t" name="fname"></td></tr>');;
+        console.log(e)
+        for (const [key, value] of Object.entries(e)) {
+            console.log(`Key is ${key} and value is ${value}`)
+            t.append('<tr><td><input type="text" id=' + key + ' value=' + value + '>' + key + '</td></tr>');
         }
     }
 
     addCanvases = function(colnames){
         for (col of colnames){
-            $('#chart_container').append('<div class="col-md-3 p-2 m-0">\
+            $('#chart_container').append('<div class="col-md-4 p-2 m-0">\
                                             <div class="card border-1">\
                                                 <div class="card-body p-0 m-0">\
                                                     <canvas id="' + col +  '"></canvas>\
@@ -94,7 +110,6 @@
 
     initCharts = function (canvases){
         Chart.defaults.global.elements.point.radius = 0;
-
             charts = []
             for(can of canvases){
                 var ctx = document.getElementById(can).getContext('2d');
@@ -103,17 +118,7 @@
                     responsive: true,
                     data: {
                         labels: [],
-                        datasets: [{
-                            label: can,
-                            data: [],
-                            borderWidth: 0,
-                            borderColor: 'rgba(255, 0, 0, 0.8)',
-                        },
-                        {
-                            label: can + "2",
-                            data: [],
-                            borderWidth: 0
-                        }]
+                        datasets: []
                     },
                     options: {
                         legend: {
@@ -143,7 +148,7 @@
                                 },
                                 ticks: {
                                     beginAtZero: false,
-                                    display:false,
+                                    display:true,
                                 }
                             }],
                             xAxes: [{
@@ -162,33 +167,29 @@
                 charts[can] = myChart;
                 console.log(myChart)
             }
-
-            setInterval(
-                function addData() {
-                    $.get("../ts", function(dict, status){
-                        for(can in canvases){
-                            cha = charts[canvases[can]]
-                            if (cha.data.labels.length > 120) {
-                                cha.data.labels.shift();
-                            }
-                            cha.data.labels.push("");
-
-                            d1 = cha.data.datasets[0]
-                            d2 = cha.data.datasets[1]
-                            if (d1.data.length > 120) {
-                                d1.data.shift();
-                            }
-                            d1.data.push(dict[0][can]);
-
-                            if (d2.data.length > 120) {
-                                d2.data.shift();
-                            }
-                            d2.data.push(dict[1][can]);
-                            cha.update();
-                        }
-                    })
-                }, 1000)
         }
+
+        function updateCharts() {
+            colors = ['rgba(255, 0, 0, 0.8)', 'rgba(0, 255, 0, 0.8)', 'rgba(0, 0, 255, 0.8)', 'rgba(0, 0, 0, 0.8)']
+            $.get("../ts", function(dict, status){
+                    for(can in charts){
+                        console.log(dict[can], can)
+                        cha = charts[can]
+                        new_dataset = {
+                            label: can,
+                            data: dict[can],
+                            borderWidth: 0,
+                            borderColor: colors[cha.data.datasets.length],
+                        }
+                        cha.data.labels = new Array(dict[can].length).fill('');
+                        cha.data.datasets.push(new_dataset)
+                        cha.update();
+                    }
+
+            })
+        }
+
+
 </script>
     </body>
 </html>

@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from gevent.pywsgi import WSGIServer
 from random import randint
 import pandas as pd
@@ -55,51 +55,76 @@ class TimeSeriesGen:
         
     def header(self):
         return self.cols
-    
-    def next(self):
-        self.index += 1
-        self.value = randint(18, 25)
-        return [randint(0, 15) for col in self.cols]
+
+    def results(self):
+        results = {}
+        for i in range(120):
+            for col in self.cols:
+                results[col] = results.get(col, [])
+                results[col].append(randint(10,20))
+        return results
 
 class ABExperimentTimeSeries:
     def __init__(self):
         self.eplus_exp = EplusExperiment("experiment_server")
-        self.results_a, self.results_b = None, None
+        self.results_a = None
         self.index = 0
         self.columns = []
 
-    def run_experiment(self, setpoints_a, setpoints_b):
-        self.eplus_exp.set_period(start=(1, 12), end=(5, 12))
-        self.eplus_exp.set_ab("heating setpoints", str(15), str(20))
-        self.eplus_exp.set_ab("cooling setpoints", str(18), str(35))
-        self.results_a, self.results_b = self.eplus_exp.run()
-        self.columns = self.results_b.columns.to_list()
-        self.columns = list(filter(lambda x: "power" in x.lower(), self.columns))
+    def run_experiment(self, setpoints):
+        self.eplus_exp.set_period(start=(1, 12), end=(10, 12))
+        for setpoint in setpoints:
+            self.eplus_exp.set_a(setpoint, str(setpoints[setpoint]))
+        self.results_a = self.eplus_exp.run()
+        self.columns = self.results_a.columns.to_list()
+        params = [line.strip() for line in open('east_params.txt')]
+        self.columns = params
 
     def modifiable(self):
-        return self.eplus_exp.get_modifiables()
+        modifiables = [
+          'oafractionsched',
+          'cw:loop:temp:schedule',
+          'chiller:alwaysonschedule',
+          'tower:alwaysonschedule',
+          'data:center:cpu:loading:schedule',
+          'heating:setpoints',
+          'cooling:setpoints',
+        ]
+        modifiables = set(modifiables)
+        x = self.eplus_exp.get_modifiables()
+        y = {}
+        for e in x:
+            e_ = e.replace(' ', ':')
+            if e_ in modifiables:
+                y[e_] = x[e]
+        return y
+
+
 
     def header(self):
         return self.columns
 
-    def next(self):
-        # print (self.index, self.results_b)
-        row_a = self.results_a[self.columns].iloc[self.index]
-        row_b = self.results_b[self.columns].iloc[self.index]
-        self.index = (self.index + 1)
-        tofloat = lambda l : list(map(float, list(l)))
-        return [tofloat(row_a.values), tofloat(row_b.values)]
+    def results(self):
+        res = {}
+        for col in self.columns:
+            row_a = list(map(float, list(self.results_a[col].values)))
+            res[col] = row_a
+        return res
 
-tsgen = TimeSeriesGen(9)
+# tsgen = TimeSeriesGen(9)
 # tsgen = DFTimeSeriesGen("../outputs/flipkart/flat_df.csv")
 # tsgen = DFTimeSeriesGen("../data/modelling/eplusout.csv")
 # tsgen = DFTimeSeriesGen("../eplus_modelling/usual/eplusout.csv")
 
-# tsgen = ABExperimentTimeSeries()
+tsgen = ABExperimentTimeSeries()
+print(tsgen.modifiable())
+tsgen.run_experiment(setpoints=[])
 
-@app.route('/experiment')
-def run_experiment(setpoints=None):
-    tsgen.run_experiment(1, 2)
+@app.route('/run_experiment')
+def run_experiment():
+    setpoints = request.args
+    setpoints = {x.replace(":",' '): setpoints[x] for x in setpoints}
+    tsgen.run_experiment(setpoints)
     return {'status':'finished'}
 
 @app.route('/')
@@ -108,7 +133,7 @@ def blank():
 
 @app.route('/ts')
 def chart():
-    content = tsgen.next()
+    content = tsgen.results()
     content = json.dumps(content).encode('utf8')
     response = make_response(content)
     response.headers['Content-length'] = len(content)
