@@ -13,7 +13,6 @@
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4/dt-1.10.20/sl-1.3.1/datatables.min.css"/>
         <script type="text/javascript" src="https://cdn.datatables.net/v/bs4/dt-1.10.20/sl-1.3.1/datatables.min.js"></script>
         <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js'></script>
-
     </head>
     <body>
 
@@ -26,8 +25,6 @@
                     <button type="button" class="btn btn-secondary">Run</button>
                     <button type="button" class="btn btn-secondary">Stop</button>
                 </div>
-
-
     </nav>
 
     <div class="container-fluid small">
@@ -37,7 +34,8 @@
                     <thead>
                     <tr>
                         <th>Setpoint</th>
-                        <th>Value</th>
+                        <th>A value</th>
+                        <th>B value</th>
                     </tr>
                     </thead>
                     <tbody id="sensor_table_body">
@@ -67,32 +65,20 @@
 
                 console.log()
                 addCanvases(header)
-                initCharts(header)
-                var setpoint_table = $('#setpoint_table').DataTable(
-                   {
-                       select: true,
-                       paging: false,
-                       scrollY: 400,
-                       "dom": '<"wrapper"flt>'
 
-                    }
-                );
-
-                $('#setpoint_table').on( 'click', 'tbody td', function () {
-                    setpoint_table.cell( this ).edit();
-                } );
-
-
+                var setpoint_table = $('#setpoint_table')
                 addSetpoints(setpoint_table, editables)
+                $.get("../experiment", function(initinfo, status){})
+                initCharts(header)
         });
     });
 
     addSetpoints = function(t, e){
         for(h of e){
-            t.row.add([h,0.0]).draw( false );
+            t.append('<tr><td>' + h +'</td><td><input class="input col-sm-1" type="text" id="t" name="fname"></td>\
+            <td><input class="input col-sm-1" type="text" id="t" name="fname"></td></tr>');;
         }
     }
-
 
     addCanvases = function(colnames){
         for (col of colnames){
@@ -186,21 +172,22 @@
                                 cha.data.labels.shift();
                             }
                             cha.data.labels.push("");
+
                             d1 = cha.data.datasets[0]
                             d2 = cha.data.datasets[1]
                             if (d1.data.length > 120) {
                                 d1.data.shift();
                             }
-                            d1.data.push(dict[can]);
+                            d1.data.push(dict[0][can]);
 
-                            if (d2.data.length > 20) {
+                            if (d2.data.length > 120) {
                                 d2.data.shift();
                             }
-                            d2.data.push(dict[can]);
+                            d2.data.push(dict[1][can]);
                             cha.update();
                         }
                     })
-                }, 100)
+                }, 1000)
         }
 </script>
     </body>

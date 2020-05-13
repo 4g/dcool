@@ -13,6 +13,7 @@
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4/dt-1.10.20/sl-1.3.1/datatables.min.css"/>
         <script type="text/javascript" src="https://cdn.datatables.net/v/bs4/dt-1.10.20/sl-1.3.1/datatables.min.js"></script>
         <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js'></script>
+
     </head>
     <body>
 
@@ -25,6 +26,8 @@
                     <button type="button" class="btn btn-secondary">Run</button>
                     <button type="button" class="btn btn-secondary">Stop</button>
                 </div>
+
+
     </nav>
 
     <div class="container-fluid small">
@@ -79,6 +82,7 @@
                     setpoint_table.cell( this ).edit();
                 } );
 
+
                 addSetpoints(setpoint_table, editables)
         });
     });
@@ -88,6 +92,7 @@
             t.row.add([h,0.0]).draw( false );
         }
     }
+
 
     addCanvases = function(colnames){
         for (col of colnames){
@@ -117,11 +122,6 @@
                             data: [],
                             borderWidth: 0,
                             borderColor: 'rgba(255, 0, 0, 0.8)',
-                        },
-                        {
-                            label: can + "2",
-                            data: [],
-                            borderWidth: 0
                         }]
                     },
                     options: {
@@ -174,24 +174,25 @@
 
             setInterval(
                 function addData() {
+                    new_dataset = {
+                            label: "apple",
+                            data: [],
+                            borderWidth: 0,
+                            borderColor: 'rgba(255, 0, 0, 0.8)',
+                        }
+
                     $.get("../ts", function(dict, status){
                         for(can in canvases){
                             cha = charts[canvases[can]]
-                            if (cha.data.labels.length > 120) {
+                            if (cha.data.labels.length > 20) {
                                 cha.data.labels.shift();
                             }
                             cha.data.labels.push("");
-                            d1 = cha.data.datasets[0]
-                            d2 = cha.data.datasets[1]
-                            if (d1.data.length > 120) {
-                                d1.data.shift();
-                            }
+                            d1 = cha.data.datasets.slice(-1)[0]
                             d1.data.push(dict[can]);
-
-                            if (d2.data.length > 20) {
-                                d2.data.shift();
+                            if (d1.data.length > 20) {
+                                cha.data.datasets.push(new_dataset)
                             }
-                            d2.data.push(dict[can]);
                             cha.update();
                         }
                     })
