@@ -72,7 +72,11 @@ class ABExperimentTimeSeries:
         self.columns = []
 
     def run_experiment(self, setpoints):
-        self.eplus_exp.set_period(start=(1, 12), end=(10, 12))
+        month = setpoints.get('month', 5)
+        if 'month' in setpoints:
+            del(setpoints['month'])
+
+        self.eplus_exp.set_period(start=(1, month), end=(10, month))
         for setpoint in setpoints:
             self.eplus_exp.set_a(setpoint, str(setpoints[setpoint]))
         self.results_a = self.eplus_exp.run()
@@ -90,6 +94,7 @@ class ABExperimentTimeSeries:
           'heating:setpoints',
           'cooling:setpoints',
         ]
+
         modifiables = set(modifiables)
         x = self.eplus_exp.get_modifiables()
         y = {}
@@ -97,6 +102,7 @@ class ABExperimentTimeSeries:
             e_ = e.replace(' ', ':')
             if e_ in modifiables:
                 y[e_] = x[e]
+        y['month'] = 5
         return y
 
 
@@ -118,7 +124,7 @@ class ABExperimentTimeSeries:
 
 tsgen = ABExperimentTimeSeries()
 print(tsgen.modifiable())
-tsgen.run_experiment(setpoints=[])
+tsgen.run_experiment(setpoints={})
 
 @app.route('/run_experiment')
 def run_experiment():

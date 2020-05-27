@@ -268,7 +268,7 @@ class System:
         reduce_lr = tf.keras.callbacks.LearningRateScheduler(schedule=System.lrschedule, verbose=True)
 
         for part in self.parts:
-            print ("Training ", part.name)
+            print("Training ", part.name)
             part.model = self.create_timeseries_model(part.input_params, part.output_params)
             part_X, part_y, x_val, y_val = self.get_timeseries_data(part.input_params, part.output_params)
 

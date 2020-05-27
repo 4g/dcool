@@ -37,7 +37,6 @@
                     <tbody id="sensor_table_body">
                     </tbody>
                 </table>
-
             </div>
 
             <div class="col-sm-9 col-md-6 col-lg-9">
@@ -69,6 +68,7 @@
                 addSetpoints(setpoint_table, editables)
                 document.getElementById('update_button').onclick = startExperiment
                 initCharts(header)
+                startExperiment()
         });
     });
 
@@ -147,7 +147,7 @@
                                     display:false
                                 },
                                 ticks: {
-                                    beginAtZero: false,
+                                    beginAtZero: true,
                                     display:true,
                                 }
                             }],
@@ -169,23 +169,29 @@
             }
         }
 
+        var alternate = 0;
+
         function updateCharts() {
-            colors = ['rgba(255, 0, 0, 0.8)', 'rgba(0, 255, 0, 0.8)', 'rgba(0, 0, 255, 0.8)', 'rgba(0, 0, 0, 0.8)']
+            colors = ['rgba(255, 0, 0, 0.8)', 'rgba(0, 255, 0, 0.8)']
             $.get("../ts", function(dict, status){
                     for(can in charts){
                         console.log(dict[can], can)
                         cha = charts[can]
                         new_dataset = {
-                            label: can,
+                            label: can.split(",")[1],
                             data: dict[can],
                             borderWidth: 0,
-                            borderColor: colors[cha.data.datasets.length],
+                            borderColor: colors[alternate],
                         }
                         cha.data.labels = new Array(dict[can].length).fill('');
                         cha.data.datasets.push(new_dataset)
+                        if(cha.data.datasets.length > 2){
+                            cha.data.datasets.shift()
+                        }
                         cha.update();
-                    }
 
+                    }
+                alternate = 1 - alternate
             })
         }
 

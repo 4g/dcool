@@ -1,0 +1,8 @@
+[
+    {
+      "origin": ["http://4g.github.io","https://4g.github.io","http://github.com","https://github.com" ],
+      "responseHeader": ["Content-Type"],
+      "method": ["GET"],
+      "maxAgeSeconds": 3600
+    }
+]

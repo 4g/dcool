@@ -77,9 +77,9 @@ def serialize_directory(directory, dffile):
     for param in tqdm(data, desc="Preparing each param ..."):
         for ts, val in data[param]:
             if ts not in time_cache:
-                o_ts = datetime.strptime(ts, '%d-%b-%y %H:%M:%S %p %Z')
+                o_ts = datetime.strptime(ts, '%d-%b-%y %I:%M:%S %p %Z')
                 o_ts = o_ts.replace(second=0)
-                time_cache[ts] = o_ts
+                time_cache[ts] = o_ts.strftime('%Y-%m-%d %H:%M:%S')
 
             o_ts = time_cache[ts]
             data_dict[o_ts] = data_dict.get(o_ts, {})
@@ -104,8 +104,7 @@ def load_df(dffile, clean=True):
     df = pd.read_csv(dffile)
     if clean:
         df.dropna(thresh=7, inplace=True)
-        df.fillna(method='ffill', inplace=True)
-        df.fillna(method='bfill', inplace=True)
+        df.interpolate(method='linear', limit_direction='forward', inplace=True)
     return df
 
 def to_filename(s):
@@ -128,9 +127,11 @@ def plots(dffile, plot_dir):
         plt.clf()
 
 def analysis(dffile):
-    df = load_df(dffile, clean=False)
+    df = load_df(dffile, clean=True)
     print(f"Data shape = {df.shape}")
-    print("Null counts ====== \n", df.isna().sum(), "\n===============")
+    nulls = df.isna().sum().to_dict()
+    nulls = json.dumps(nulls, indent=True)
+    print("Null counts ====== \n", nulls, "\n===============")
 
 
 if __name__ == "__main__":
@@ -144,9 +145,9 @@ if __name__ == "__main__":
 
     dffile = get_dfpath(args.outdir)
     serialize_directory(args.indir, dffile)
-
-    plot_dir = get_plotdir(args.outdir)
-    os.makedirs(plot_dir, exist_ok=True)
-    plots(dffile, plot_dir)
-
-    analysis(dffile)
+    #
+    # plot_dir = get_plotdir(args.outdir)
+    # os.makedirs(plot_dir, exist_ok=True)
+    # plots(dffile, plot_dir)
+    #
+    # analysis(dffile)
