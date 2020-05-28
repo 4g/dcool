@@ -50,6 +50,7 @@ Data centers consume 2–3% of worlds power¹. 30–50% of this power goes into 
  
  ![PUE optimization](https://storage.googleapis.com/solveforx/therml/blog/images/pue_opt.png)
  
+ 
  **RL policies**
  - Action space of controls
  - Agent
