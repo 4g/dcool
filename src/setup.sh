@@ -1,6 +1,8 @@
 #!/bin/bash
-python3 -m venv --system-site-packages ~/py3env2
-source ~/py3env2/bin/activate
+set -e
+
+python3 -m venv --system-site-packages ~/py3env
+source ~/py3env/bin/activate
 pip install tensorflow
 pip install gym
 pip install keras-rl
