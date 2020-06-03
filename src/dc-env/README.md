@@ -5,17 +5,17 @@ dc-env
 
 Setup
 -----
-> cd src/
-> chmod +x setup.sh
-> ./setup.sh
+> cd src/  
+> chmod +x setup.sh  
+> ./setup.sh  
 
 Run
 ----
-> cd dc-env/
-> source ~/py3env/bin/activate
+> cd dc-env/  
+> source ~/py3env/bin/activate  
 
-# Runs a dc emulator
-> python gym_test.py
+# Runs a dc emulator  
+> python gym_test.py  
 
 # Runs dc emulator and trpo from keras-rl on emulator
-> python rl_train.py
+> python rl_train.py  
