@@ -1,17 +1,14 @@
-======
 dc-env
 ======
 1. Game engine based emulator for a DC rack.
 2. Run simple RL algorithms on the emulator
 
------
 Setup
 -----
 cd src/
 chmod +x setup.sh
 ./setup.sh
 
-----
 Run
 ----
 cd dc-env/
